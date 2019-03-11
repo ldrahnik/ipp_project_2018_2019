@@ -28,7 +28,7 @@ class Parser {
 
   private $instructios = array();
 
-  const HELP_MESSAGE = "Analyzátor kódu v IPPcode18:
+  const HELP_MESSAGE = "Analyzátor kódu v IPPcode19:
       --help vypíše na standardní výstup nápovědu skriptu (nenačítá žádný vstup)
       --stats=file slouží pro zadání souboru file, kam se agregované statistiky
       budou vypisovat (po řádcích dle pořadí v dalších parametrech)
@@ -47,7 +47,7 @@ class Parser {
   /**
    * Funkce se volá hned po zavolání konstruktoru.
    * Funkce poté volá funkci na parsování argumentů.
-   * Funkce poté volá funkci na parsování samotného kódu v jazyce IPPcode18 daného na vstupu.
+   * Funkce poté volá funkci na parsování samotného kódu v jazyce IPPcode19 daného na vstupu.
    * Funkce poté volá funkci writeStats pokud je rozšíření vyžadováno a tedy chceme statistiky o kódu sbírat do uvedeného souboru.
    * Funkce zavolá funkci writeHtml a končí.
    */
@@ -226,7 +226,7 @@ class Parser {
     // odstranit konce řádků, mezery ze začátku i konce, nezajímají nás
     $line = trim($line, " \r\n");
 
-    // Kód v jazyce IPPcode18 začíná úvodním řádkem s tečkou následovanou jménem jazyka (nezáleží na velikosti písmen):
+    // Kód v jazyce IPPcode19 začíná úvodním řádkem s tečkou následovanou jménem jazyka (nezáleží na velikosti písmen):
     if(strcmp(strtolower($line), strtolower('.' . $this->language)) !== 0) {
       return 21;
     }
@@ -489,7 +489,7 @@ class Parser {
             );
             break;
           default:
-            // lexikální nebo syntaktická chyba zdrojového kódu zapsaného v IPPcode18.
+            // lexikální nebo syntaktická chyba zdrojového kódu zapsaného v IPPcode19.
             return 21;
         }
       }
