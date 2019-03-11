@@ -13,7 +13,7 @@ class Parser {
   private $xmlEncoding = 'UTF-8';
   private $xmlRootName = 'program';
 
-  private $language = 'IPPcode18';
+  private $language = 'IPPcode19';
 
   private $statsFile = null;
   private $statsOpts = array();
