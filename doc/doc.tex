@@ -13,7 +13,7 @@
 \usepackage{courier}
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{Implementační dokumentace k projektu do IPP 2017/2018\\
+\lhead{Implementační dokumentace k projektu do IPP 2018/2019\\
 Jméno a příjmení: Lukáš Drahník\\
 Login: xdrahn00}
 \rfoot{Page \thepage}
@@ -34,7 +34,7 @@ Login: xdrahn00}
   Všechny moduly obsahují nápovědu.
 
 \section{Parser (\texttt{parse.php})}
-  Parser je dle zadání psán pro php verzi 5.6. Vzhledem k návrhu všech částí je zde funkce na zpracování argumentů (\texttt{parseArgs}), na parsování vstupu (\texttt{parseLanguage}) a na výpis na výstup (\texttt{writeXml}).
+  Parser je dle zadání psán pro php verzi 7.3. Vzhledem k návrhu všech částí je zde funkce na zpracování argumentů (\texttt{parseArgs}), na parsování vstupu (\texttt{parseLanguage}) a na výpis na standartní výstup (\texttt{writeXml}).
 
   Nejdelší funkce a jádro parseru je metoda \texttt{parseLanguage} pro kterou byla vytvořena řada podpůrných funkcí ověřujících například validitu symbolu, labelu, proměnné, konstanty.
   Tato funkce je implementovaná jako velký switch do kterého se dostanou všechny řádky ze vstupu obsahující instrukce bez komentářů, bez mezer. Pokud zadaná instrukce neexistuje, vrací se chyba, pokud instrukce obsahuje nepovolený počet argumentů, špatné typy argumentů atd. vrací se chyba.
