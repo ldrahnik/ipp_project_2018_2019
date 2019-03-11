@@ -1,0 +1,40 @@
+usage: python3.6 interpret.py [--help] [--source SOURCE] [--stats STATS]
+                              [--insts] [--vars]
+
+Interpret XML reprezentace kódu. Pro správnou funkčnost je nutná verze
+Python3.6.
+
+optional arguments:
+  --help           nápověda
+  --source SOURCE
+  --stats STATS
+  --insts
+  --vars
+usage: python3.6 interpret.py [--help] [--source SOURCE] [--stats STATS]
+                              [--insts] [--vars]
+
+Interpret XML reprezentace kódu. Pro správnou funkčnost je nutná verze
+Python3.6.
+
+optional arguments:
+  --help           nápověda
+  --source SOURCE
+  --stats STATS
+  --insts
+  --vars
+usage: python3.6 interpret.py [--help] [--source SOURCE] [--stats STATS]
+                              [--insts] [--vars]
+
+Interpret XML reprezentace kódu. Pro správnou funkčnost je nutná verze
+Python3.6.
+
+optional arguments:
+  --help           nápověda
+  --source SOURCE
+  --stats STATS
+  --insts
+  --vars
+  File "interpret.py", line 947
+    =            self.labelIns(args)
+    ^
+IndentationError: expected an indented block
