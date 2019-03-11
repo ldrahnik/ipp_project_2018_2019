@@ -258,13 +258,13 @@ class Parser {
           case "INT2TOCHAR":
           case "NOT":
             if(count($exploded) != 3) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectVarName($exploded[1])) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectSymbName($exploded[2])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -286,7 +286,7 @@ class Parser {
           case "RETURN":
           case "BREAK":
             if(count($exploded) != 1) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0]
@@ -295,10 +295,10 @@ class Parser {
           case "POPS":
           case "DEFVAR":
             if(count($exploded) != 2) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectVarName($exploded[1])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -312,10 +312,10 @@ class Parser {
             break;
           case "CALL":
             if(count($exploded) != 2) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectLabelName($exploded[1])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -331,10 +331,10 @@ class Parser {
           case "WRITE":
           case "DPRINT":
             if(count($exploded) != 2) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectSymbName($exploded[1])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -360,16 +360,16 @@ class Parser {
           case "GETCHAR":
           case "SETCHAR":
             if(count($exploded) != 4) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectVarName($exploded[1])) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectSymbName($exploded[2])) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectSymbName($exploded[3])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -391,13 +391,13 @@ class Parser {
             break;
           case "READ":
             if(count($exploded) != 3) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectVarName($exploded[1])) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectTypeName($exploded[2])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -416,13 +416,13 @@ class Parser {
           case "STRLEN":
           case "TYPE":
             if(count($exploded) != 3) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectVarName($exploded[1])) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectSymbName($exploded[2])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -441,10 +441,10 @@ class Parser {
           case "LABEL":
           case "JUMP":
             if(count($exploded) != 2) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectLabelName($exploded[1])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -459,16 +459,16 @@ class Parser {
           case "JUMPIFEQ":
           case "JUMPIFNEQ":
             if(count($exploded) != 4) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectLabelName($exploded[1])) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectSymbName($exploded[2])) {
-              return 21;
+              return 23;
             }
             if(!$this->isCorrectSymbName($exploded[3])) {
-              return 21;
+              return 23;
             }
             $this->instructions[$this->codeLinesCount] = array(
               'opcode' => $exploded[0],
@@ -489,8 +489,8 @@ class Parser {
             );
             break;
           default:
-            // lexikální nebo syntaktická chyba zdrojového kódu zapsaného v IPPcode19.
-            return 21;
+            // neznámý nebo chybný operační kód ve zdrojovém kódu zapsaném v IPPcode19
+            return 22;
         }
       }
     }
