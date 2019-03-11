@@ -1,4 +1,4 @@
-.IPPcode18#ffdf
+.IPPcode19#ffdf
 DEFVAR GF@counter
 MOVE GF@counter string@ # Inicializace prom ě nn é na pr á zdn ý ř et ě zec
 # Jednoduch á iterace , dokud nebude spln ě na zadan á podm í nka
