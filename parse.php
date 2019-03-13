@@ -26,6 +26,12 @@ class Parser {
   // nepočítají se prázdné řádky, ani řádky obsahující pouze komentář, ani úvodní řádek
   private $codeLinesCount = 0;
 
+  // vypíše do statistik počet definovaných návěští (tj. unikátních možných cílů skoku)
+  private $labelsCount = 0;
+
+  // vypíše do statistik počet instrukcí pro podmíněné a nepodmíněné skoky dohromady
+  private $jumpsCount = 0;
+
   private $instructios = array();
 
   const HELP_MESSAGE = "Analyzátor kódu v IPPcode19:
@@ -99,6 +105,12 @@ class Parser {
       }
       if($key == 'comments') {
         file_put_contents($this->statsFile, $this->commentsCount . "\n", FILE_APPEND);
+      }
+      if($key == 'labels') {
+        file_put_contents($this->statsFile, $this->labelsCount . "\n", FILE_APPEND);
+      }
+      if($key == 'jumps') {
+        file_put_contents($this->statsFile, $this->jumpsCount . "\n", FILE_APPEND);
       }
     }
 
@@ -314,6 +326,8 @@ class Parser {
             );
             break;
           case "CALL":
+            $this->jumpsCount++;
+
             if(count($exploded) != 2) {
               return 23;
             }
@@ -442,7 +456,10 @@ class Parser {
             );
             break;
           case "LABEL":
+            $this->labelsCount++;
           case "JUMP":
+            $this->jumpsCount++;
+
             if(count($exploded) != 2) {
               return 23;
             }
@@ -460,7 +477,10 @@ class Parser {
             );
             break;
           case "JUMPIFEQ":
+            $this->jumpsCount++;
           case "JUMPIFNEQ":
+            $this->jumpsCount++;
+
             if(count($exploded) != 4) {
               return 23;
             }
@@ -512,6 +532,8 @@ class Parser {
         "stats:",
         "loc",
         "comments",
+        "labels",
+        "jumps",
         "help"
     );
 
@@ -525,8 +547,8 @@ class Parser {
       $this->displayHelp();
     }
 
-    // Chybí-li při zadání --loc nebo --comments parametr --stats, jedná se o chybu 10
-    if((array_key_exists('comments', $options) || array_key_exists('loc', $options)) && !array_key_exists('stats', $options)) {
+    // Chybí-li při zadání --loc, --comments, --labels nebo --jumps parametr --stats, jedná se o chybu 10
+    if((array_key_exists('comments', $options) || array_key_exists('loc', $options) || array_key_exists('labels', $options) || array_key_exists('jumps', $options)) && !array_key_exists('stats', $options)) {
       return 10;
     }
 
@@ -534,7 +556,7 @@ class Parser {
       $this->statsFile = $options['stats'];
 
       foreach($options as $key => $value) {
-        if($key == 'loc' || $key == 'comments') {
+        if($key == 'loc' || $key == 'comments' || $key == 'labels' || $key == 'jumps') {
           $this->statsOpts[$key] = true;
         }
       }
