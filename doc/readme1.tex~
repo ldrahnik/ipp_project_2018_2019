@@ -1,0 +1,58 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage[left=2cm,top=3cm,text={17cm,24cm}]{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\titleformat*{\section}{\fontsize{12}{15}\selectfont}
+\titleformat*{\subsection}{\fontsize{11}{13}\selectfont}
+\usepackage{courier}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Implementační dokumentace k 1. úloze do IPP 2018/2019\\
+Jméno a příjmení: Lukáš Drahník\\
+Login: xdrahn00}
+\rfoot{Page \thepage}
+
+\begin{document}
+
+\hfill
+
+\section*{Návrh programu}
+  Při návrhu všech modulů v projektu jsem se snažil dbát na co největší přehlednost kódu, na
+  využívání vestavěných knihoven a funkcí a omezit tedy co nejvíce vlastní kód, který snižuje
+  čitelnost, zvyšuje šanci na možnou chybu a v neposlední řadě zbytečně prodlužuje samotný zdrojový kód.
+
+  Ve všech modulech je primárně oddělené zpracování argumentů, zpracování vstupu a zápis na výstup.
+  Je snaha pro veškerý kód, který na to má nárok vytvořit odpovídající funkci/metodou pro
+  znovupoužitelnost a pro zvýšení čitelnosti a rozsekání tak zdrojového kódu na pojmenované sub celky.
+
+  Všechny moduly obsahují nápovědu.
+
+\section{Parser (\texttt{parse.php})}
+  Parser je dle zadání psán pro php verzi 7.3. Vzhledem k návrhu všech částí je zde funkce na zpracování argumentů (\texttt{parseArgs}), na parsování vstupu (\texttt{parseLanguage}) a na výpis na standartní výstup (\texttt{writeXml}).
+
+  Nejdelší funkce a jádro parseru je metoda \texttt{parseLanguage} pro kterou byla vytvořena řada podpůrných funkcí ověřujících například validitu symbolu, labelu, proměnné, konstanty.
+  Tato funkce je implementovaná jako velký switch do kterého se dostanou všechny řádky ze vstupu obsahující instrukce bez komentářů, bez mezer. Pokud zadaná instrukce neexistuje, vrací se chyba, pokud instrukce obsahuje nepovolený počet argumentů, špatné typy argumentů atd. vrací se chyba.
+
+  Vzhledem k naimplementovanému rozšíření STATP, které se týká pouze parseru byla vytvořena funkce \texttt{writeStats}, která zapisuje do uvedeného souboru statistiky (počet řádků s komentářem a počet instrukcí) dle pořadí v argumentech (každé na zvláštní řádek) v případě vyžádání rozšíření.
+
+\section{Vytváření archivu}
+  Celý projekt je zabalen do souboru s příponou .tar dle zadání a to pomocí příkazu make tar v souboru Makefile.
+  Bylo potřeba se vypořádat s přesunutím dokumentace z podsložky do rootu archivu. Vyřešeno pomocí argumentu \texttt{-C doc readme1.pdf}.
+
+\nocite{*}
+
+%% BIBLIOGRAPHY
+\bibliography{local}
+\bibliographystyle{plain}
+
+\newpage
+\thispagestyle{empty}
+
+\end{document}
+%% END OF FILE

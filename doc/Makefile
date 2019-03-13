@@ -1,6 +1,6 @@
-doc.dvi: doc.tex Makefile local.bib
+readme1.dvi: readme1.tex Makefile local.bib
 	latex $<
-	bibtex doc
+	bibtex readme1
 	latex $<
 	latex $<
 
