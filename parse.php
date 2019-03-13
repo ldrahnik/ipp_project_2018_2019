@@ -352,6 +352,7 @@ class Parser {
             break;
           case "PUSHS":
           case "WRITE":
+	  case "EXIT":
           case "DPRINT":
             if(count($exploded) != 2) {
               return 23;
