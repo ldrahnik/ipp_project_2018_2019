@@ -149,6 +149,10 @@ class Parser {
     if(preg_match('/^string@.*$/', $name)) {
       $string = true;
     }
+    $nil = false;
+    if(preg_match('/^nil@nil$/', $name)) {
+      $nil = true;
+    }
 
     /*
      * U literálů typu string při zápisu do XML nepřevádějte původní escape sekvence, ale
@@ -162,7 +166,7 @@ class Parser {
       $name = str_replace($search, $replace, $name);
     }
 
-    if($string || $int || $bool) {
+    if($string || $int || $bool || $nil) {
       return true;
     }
 
@@ -190,7 +194,7 @@ class Parser {
    * Funkce kontroluje, zda je zadaný type symbolu správný, jestliže platí Type ∈ {int, string, bool} vrací true, pakliže ne, false.
    */
   function isCorrectTypeName($name) {
-    return ($name == 'bool' || $name == 'string' | $name == 'int');
+    return ($name == 'bool' || $name == 'string' || $name == 'int' || $name == 'nil');
   }
 
   /**
