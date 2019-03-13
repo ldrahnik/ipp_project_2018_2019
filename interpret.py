@@ -11,7 +11,7 @@ import re
 class interpret:
 
 
-    language = 'IPPcode18';
+    language = 'IPPcode19';
 
     GF = {}
     LF = None
