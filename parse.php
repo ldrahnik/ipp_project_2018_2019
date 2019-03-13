@@ -5,7 +5,7 @@ $result = $parser->run();
 exit($result);
 
 /**
- * Analyzátor kódu v IPPcode18.
+ * Analyzátor kódu v IPPcode19.
  */
 class Parser {
 
