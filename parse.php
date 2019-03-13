@@ -41,7 +41,9 @@ class Parser {
       --loc vypíše do statistik počet řádků s instrukcemi (nepočítají se prázdné
        řádky, ani řádky obsahující pouze komentář, ani úvodní řádek)
       --comments vypíše do statistik počet řádků, na kterých se vyskytoval
-      komentář\n";
+      komentář
+      --labels vypíše do statistik počet definovaných návěští
+      --jumps vypíše do statistik počet instrukcí pro podmíněné a nepodmíněné skoky dohromady\n";
 
   /**
    * Konstruktor přijímající argumenty uvedené v příkazové řádce.
