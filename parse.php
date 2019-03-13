@@ -129,7 +129,7 @@ class Parser {
    * uloženou v globálním rámci.
    */
   function isCorrectVarName($name) {
-    if(!preg_match('/^(LF|TF|GF){1}@[a-zA-Z_\-$&%*]{1}[a-zA-Z0-9_\-$&%*]*$/', $name)) {
+    if(!preg_match('/^(LF|TF|GF){1}@[a-zA-Z_\-$&%*?!]{1}[a-zA-Z0-9_\-$&%*?!]*$/', $name)) {
       return false;
     }
     return true;
