@@ -175,24 +175,27 @@ class Parser {
   }
 
   /**
-   * Funkce slouží pro rozdělení symbolu podle zavináče a vrací Type. Type@Value.
-   */
-  function getSymbType($name) {
-    return explode("@", $name)[0];
-  }
-
-  /**
-   * Funkce slouží pro rozdělení symbolu podle zavináče a vrací Value. Type@Value.
-   */
-  function getSymbValue($name) {
-    return explode("@", $name)[1];
-  }
-
-  /**
    * Funkce kontroluje, zda je zadaný type symbolu správný, jestliže platí Type ∈ {int, string, bool} vrací true, pakliže ne, false.
    */
   function isCorrectTypeName($name) {
     return ($name == 'bool' || $name == 'string' | $name == 'int');
+  }
+
+  /**
+   * Funkce slouží pro rozdělení symbolu podle zavináče a vrací Type. Type@Value. Pokud nejde o konstantu ale o proměnnou vrací var.
+   */
+  function getSymbType($name) {
+    if($this->isCorrectTypeName(explode("@", $name)[0]))
+        return explode("@", $name)[0];
+    else
+        return 'var';
+  }
+
+  /**
+   * Funkce slouží pro rozpoznání zda jde o konstantu nebo proměnnou. V případě proměnné vrací $name a v případě konstanty Value za zavináčem. Type@Value.
+   */
+  function getSymbValue($name) {
+    return $this->getSymbType($name) == 'var' ? $name : explode("@", $name)[1];
   }
 
   /**
