@@ -22,10 +22,10 @@ class Test {
       --directory=path testy bude hledat v zadaném adresáři (chybí-li tento parametr, tak skript prochází aktuální adresář)
       --recursive testy bude hledat nejen v zadaném adresáři, ale i rekurzivně ve všech jeho
         podadresářích
-      --parse-script=file soubor se skriptem v PHP 5.6 pro analýzu zdrojového kódu v IPPcode18
+      --parse-script=file soubor se skriptem v PHP 7.3 pro analýzu zdrojového kódu v IPPcode19
         (chybí-li tento parametr, tak implicitní hodnotou je parse.php uložený v aktuálním adresáři)
       --int-script=file soubor se skriptem v Python 3.6 pro interpret XML reprezentace kódu
-        v IPPcode18 (chybí-li tento parametr, tak implicitní hodnotou je interpret.py uložený v aktuálním adresáři)
+        v IPPcode19 (chybí-li tento parametr, tak implicitní hodnotou je interpret.py uložený v aktuálním adresáři)
       --testlist=file Slouží pro explicitní zadání seznamu adresářů (zadaných relativními či absolutními cestami) a případně i souborů s testy (zadává se soubor s příponou .src) formou externího souboru file místo načtení testů z aktuálního adresáře (nelze kombinovat s parametrem --directory)
       --match=regexp Slouží pro výběr testů jejichž jmémo je bez přípony (ne cesta) odpovídá zadanému regulárnímu výrazu regexp dle PCRE syntaxe.\n";
   /**
