@@ -225,19 +225,19 @@ class interpret:
 
         if(self.isValidVar(args[0]) == False):
             if(self.getSymbType(args[0]) == 'bool'):
-                print(args[0].text, end="") # TODO: bool
+                print(args[0].text) # TODO: bool
             else:
-                print(args[0].text, end="")
+                print(args[0].text)
         else:
             if(self.getSymbType(args[0]) == 'GF'):
                 if(self.getSymbValue(args[0]) not in self.GF):
                     self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
                 if(self.GF.get(self.getSymbValue(args[0])).get("type") == "bool"):
-                    print(self.GF.get(self.getSymbValue(args[0])).get("value"), end="") # TODO: bool
+                    print(self.GF.get(self.getSymbValue(args[0])).get("value")) # TODO: bool
                 else:
-                    print(self.GF.get(self.getSymbValue(args[0])).get("value"), end="")
+                    print(self.GF.get(self.getSymbValue(args[0])).get("value"))
             else:
-                print(self.getSymbType(args[0]), end="")
+                print(self.getSymbType(args[0]))
             # TODO: LF, TF
 
     #
