@@ -240,6 +240,24 @@ class interpret:
                 print(self.getSymbType(args[0]), end="")
             # TODO: LF, TF
 
+
+    #
+    # Instruction EXIT
+    #
+    def exitIns(self, args):
+        if(len(args) != 1):
+            self.error('U instrukce EXIT musí být počet argumentů roven 1', 52)
+        if(self.isValidSymb(args[0]) == False):
+            self.error('Symbol není validní', 53)
+
+        try:
+            exitValue = int(args[0].text)
+            if(exitValue < 0 or exitValue > 49):
+                raise ValueError
+            sys.exit(exitValue)
+        except ValueError:
+            self.error('Symbol není celé číslo v intervalu 0 až 49 (včetně)', 57)
+
     #
     # Instruction BREAK
     #
@@ -1281,6 +1299,8 @@ class interpret:
             self.jumpifeqIns(args)
         elif(upperOpCode == 'JUMPIFNEQ'):
             self.jumpifneqIns(args)
+        elif(upperOpCode == 'EXIT'):
+            self.exitIns(args)
 
         # neznámý operační kód
         else:
@@ -1342,7 +1362,7 @@ class interpret:
     #
     # Funkce se stará o validování argumentů (nevhodné rozmezí hodnot, nevhodné kombinace argumentů atp.)
     #
-    def validateCmdArgs(self, opts):
+    def validateCmdArgs(self, opts): 
 
         # chybí-li při zadání --insts či --vars parametr --stats, jedná se o chybu 10
         if opts.stats == None and (opts.insts != None or opts.vars != None):
