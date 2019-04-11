@@ -1101,7 +1101,7 @@ class interpret:
             self.GF[self.getSymbValue(args[0])] = {"value": type, "type": "string"}
 
     #
-    # Instruction CONTAC
+    # Instruction CONCAT
     #
     def concatIns(self, args):
         if(len(args) != 3):
