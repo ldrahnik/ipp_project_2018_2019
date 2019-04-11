@@ -167,7 +167,6 @@ parametr se nesmí kombinovat s parametrem --int-script)
       // Interpret
       if(!$this->parseOnly) {
         if($amongrc == "0") {
-          print("fgdfd");
           shell_exec("python3.6 $this->interpretScript --source $tmpinputfile > $tmpoutputfile ; echo $? > $tmprcfile");
           $this->results[$file]['outfilediff'] = shell_exec("diff $outfile $tmpoutputfile");
         } else {
@@ -175,6 +174,16 @@ parametr se nesmí kombinovat s parametrem --int-script)
         }
         $this->results[$file]['rcfilediff'] = shell_exec("diff -w $rcfile $tmprcfile");
       }
+
+      // Je nutné smazat dočasné soubory (sloužily pouze k porovnání)
+      if(file_exists($tmprcfile))
+        unlink($tmprcfile);
+
+      if(file_exists($tmpoutputfile))
+        unlink($tmpoutputfile);
+
+      if(file_exists($tmpinputfile))
+        unlink($tmpinputfile);
     }
     return 0;
   }
@@ -261,10 +270,18 @@ parametr se nesmí kombinovat s parametrem --int-script)
   function writeHtml() {
     $testCount = count($this->results);
     $successTests = 0;
-    $testPartialResultSuccessTotalCount = 0;
     $testPartialResultTotalCount = $testCount*3;
     $folders = [];
+    fwrite(STDOUT, "<!DOCTYPE html>");
     fwrite(STDOUT, "<html xmlns='http://www.w3.org/1999/xhtml' dir='ltr' lang='cs-cz' xml:lang='cs-cz'>\n");
+    fwrite(STDOUT, "<head><meta charset=\"UTF-8\"></head>");
+    fwrite(STDOUT, "<body>");
+
+    // Testy očíslujeme od 1
+    fwrite(STDOUT, "<h1>Testy:</h1>\n\n");
+    fwrite(STDOUT, "\n#############################################################\n");
+
+    $testIterator = 1;
     foreach($this->results as $srcfile => $info) {
       $testResult = "false";
       $name = explode(".", basename($srcfile))[0];
@@ -275,7 +292,6 @@ parametr se nesmí kombinovat s parametrem --int-script)
       if($infilleddiff == "true") $testPartialResult++;
       if($outputfilediff == "true") $testPartialResult++;
       if($rcfilediff == "true") $testPartialResult++;
-      $testPartialResultSuccessTotalCount += $testPartialResult;
       if($infilleddiff == "true" && $outputfilediff == "true" && $rcfilediff == "true") {
         $successTests++;
         $testResult = "true";
@@ -292,27 +308,62 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $folders[$dirname]['testCount'] += 1;
       $folders[$dirname]['testpartialresultsuccesstotalcount'] += $testPartialResult;
       $folders[$dirname]['testpartialresulttotalcount'] += 3;
-      fwrite(STDOUT, "\n\n<h1>Jméno testu: $name</h1>\n");
-      fwrite(STDOUT, "Složka: $dirname\n");
-      fwrite(STDOUT, "Soubor .src: $srcfile\n");
-      fwrite(STDOUT, "\nProvedené testy:\n");
+      $resultHeadingStyleColor = $testResult == "true" ? 'color: green;' : 'color: red;';
+      $resultHeadingStyle = "style=\"$resultHeadingStyleColor\"";
+
+      fwrite(STDOUT, "\n\n<h1 $resultHeadingStyle>$testIterator. $name ($testPartialResult/3)</h1>\n");
+      fwrite(STDOUT, "<p>Složka: $dirname</p>\n");
+      fwrite(STDOUT, "\n\nProvedené testy:\n");
       fwrite(STDOUT, "<ul>\n");
-      fwrite(STDOUT, "<li>Test porovnání vstupu intepretace: $infilleddiff</li>\n");
-      fwrite(STDOUT, "<li>Test porovnání výstupu interpretace: $outputfilediff</li>\n");
-      fwrite(STDOUT, "<li>Test návratového kódu: $rcfilediff</li>\n");
+      $interpretInputHeadingStyleColor = $infilleddiff == "true" ? 'color: green;' : 'color: red;';
+      $interpretInputHeadingStyle = "style=\"$interpretInputHeadingStyleColor\"";
+      fwrite(STDOUT, "<li>Test porovnání vstupu intepretace: <span $interpretInputHeadingStyle>$infilleddiff</li>\n");
+      $interpretOutputHeadingStyleColor = $outputfilediff == "true" ? 'color: green;' : 'color: red;';
+      $interpretOutputHeadingStyle = "style=\"$interpretOutputHeadingStyleColor\"";
+      fwrite(STDOUT, "<li>Test porovnání výstupu interpretace: <span $interpretOutputHeadingStyle>$outputfilediff</li>\n");
+      $returnCodeHeadingColor = $rcfilediff == "true" ? 'color: green;' : 'color: red;';
+      $returnCodeHeadingStyleColor = "style=\"$returnCodeHeadingColor\"";
+      fwrite(STDOUT, "<li>Test návratového kódu: <span $returnCodeHeadingStyleColor>$rcfilediff</span></li>\n");
       fwrite(STDOUT, "</ul>\n");
-      fwrite(STDOUT, "<h1>Úspěšnost testu: $testResult ($testPartialResult/3)</h1>\n");
-      fwrite(STDOUT, "#############################################################\n");
+      $testIterator++;
     }
-    fwrite(STDOUT, "\n\n<h1>Celková úspěšnost: $successTests/$testCount (celková úspěšnost všech podtestů: $testPartialResultSuccessTotalCount/$testPartialResultTotalCount)</h1>\n");
-    fwrite(STDOUT, "<h1>Celková úspěšnost dle složek:\n\n");
+    fwrite(STDOUT, "\n#############################################################\n");
+    $testsResultHeadingColor = $successTests == $testCount ? 'color: green;' : 'color: red;';
+    $testsResultHeadingStyleColor = "style=\"$testsResultHeadingColor\"";
+    fwrite(STDOUT, "\n\n<h1 $testsResultHeadingStyleColor>Celková úspěšnost: $successTests/$testCount</h1>\n");
+
+    fwrite(STDOUT, "<br>");
+    fwrite(STDOUT, "<br>");
+    fwrite(STDOUT, "<br>");
+
+    fwrite(STDOUT, "<h1>Složky:</h1>\n\n");
+    fwrite(STDOUT, "\n#############################################################\n");
+
+    // Složky očíslujeme od 1
+    $folderIterator = 1;
+    $successFolders = 0;
     foreach($folders as $name => $results) {
       $successTests = $results['successTests'];
       $testCount = $results['testCount'];
       $testPartialResultSuccessTotalCount = $results['testpartialresultsuccesstotalcount'];
       $testPartialResultTotalCount = $results['testpartialresulttotalcount'];
-      fwrite(STDOUT, "\n$name : $successTests/$testCount (celková úspěšnost všech podtestů: $testPartialResultSuccessTotalCount/$testPartialResultTotalCount)\n");
+
+      $folderHeadingColor = $successTests == $testCount ? 'color: green;' : 'color: red;';
+      $folderHeadingStyleColor = "style=\"$folderHeadingColor\"";
+      fwrite(STDOUT, "<h1 $folderHeadingStyleColor><p>\n$folderIterator. $name ($successTests/$testCount) </p></h1>\n");
+
+      if($successTests == $testCount) {
+         $successFolders += 1;
+      }
+      $folderIterator++;
     }
+    fwrite(STDOUT, "\n#############################################################\n");
+    $foldersCount = count($folders);
+    $foldersResultHeadingColor = $successFolders == $foldersCount ? 'color: green;' : 'color: red;';
+    $foldersResultHeadingStyleColor = "style=\"$foldersResultHeadingColor\"";
+    fwrite(STDOUT, "\n\n<h1 $foldersResultHeadingStyleColor>Celková úspěšnost: $successFolders/$foldersCount</h1>\n");
+
+    fwrite(STDOUT, "</body>");
     fwrite(STDOUT, "</html>");
   }
 }
