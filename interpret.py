@@ -80,7 +80,7 @@ class interpret:
             child = tree.getroot()[index]
 
             if(int(child.get('order')) != self.instructionOrder):
-                self.error('Číslování instrukcí není inkrementální po 1, index: ' + str(self.instructionOrder) + ' by měl být: ' + child.get('order'), 31)
+                self.error('Číslování instrukcí není inkrementální po 1, číslo instrukce: ' + child.get('order') + ' by mělo být: ' + str(self.instructionOrder), 31)
             if(child.tag != 'instruction'):
                 self.error('Tag pro každou instrukci v tagu program musí být pojmenovaný instruction', 31)
             if(child.get('opcode') == None):
@@ -107,12 +107,12 @@ class interpret:
         if(opts.stats != None):
             try:
                 f = open(opts.stats, "w")
+                f.truncate()
+                for info in self.stats:
+                    f.write(str(self.stats[info]) + "\n")
+                f.close()
             except:
                 self.error('Nepodařilo se otevřít soubor pro zápis statistik: ' + opts.stats,12)
-            f.truncate()
-            for info in self.stats:
-                f.write(str(self.stats[info]) + "\n")
-            f.close()
 
         sys.exit(0)
 
@@ -205,7 +205,7 @@ class interpret:
         if(len(args) != 1):
             self.error('U instrukce DEFVAR musí být počet argumentů roven 1', 52)
         if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable není povolená nebo musí mít type var, type uvedený', 53)
+            self.error('Hodnota ve variable není povolená nebo musí mít type var', 53)
         if(self.getSymbType(args[0]) == 'GF'):
             self.GF[self.getSymbValue(args[0])] = {"value": None, "type": None};
 
