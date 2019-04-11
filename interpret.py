@@ -19,6 +19,8 @@ class interpret:
 
     jumpTo = None
 
+    inputFile = None
+
     labels = {}
 
     stats = {}
@@ -63,6 +65,13 @@ class interpret:
             if(arg != 'language' and arg != 'name' and arg != 'description'):
                 self.error('Zakázané použití atributu: ' + arg + '. Instrukce program může obsahovat kromě povinného atributu language s hodnotou: ' +
                 self.language + ' i atributy name a description bez omezení hodnot', 31)
+
+        # v případě existujícího input souboru se ho pokusíme otevřít
+        if(opts.input != None):
+            try:
+                self.inputFile = open(opts.input, "r")
+            except:
+                self.error('Nepodařilo se otevřít soubor pro čtení vstupu: ' + opts.input,11)
 
         # procházení všech instrukcí
         index = 0
@@ -113,6 +122,13 @@ class interpret:
                 f.close()
             except:
                 self.error('Nepodařilo se otevřít soubor pro zápis statistik: ' + opts.stats,12)
+
+        # v případě existujícího input souboru se ho pokusíme zavřít
+        if(opts.input != None):
+            try:
+                self.inputFile.close()
+            except:
+                self.error('Nepodařilo se zavřít soubor pro čtení vstupu: ' + opts.input,11)
 
         sys.exit(0)
 
@@ -1208,7 +1224,15 @@ class interpret:
             self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
 
         type = args[1].text
-        value = input()
+
+        # v případě existujícího input souboru vezmeme z něj
+        if(self.inputFile != None):
+            try:
+                value = self.inputFile.readline()
+            except:
+                self.error('Nepodařilo se číst soubor pro čtení vstupu',11)
+        else:
+            value = input()
         if(type == "string"):
             try:
                 value = str(value)
@@ -1222,6 +1246,8 @@ class interpret:
         if(type == "bool"):
             if(value.upper() == "TRUE"):
                 value = "true"
+            elif(value.upper() == "FALSE"):
+                value = "false"
             else:
                 value = "false"
 
@@ -1335,7 +1361,8 @@ class interpret:
     def parseCmdArgs(self):
         parser = argparse.ArgumentParser(prog='python3.6 interpret.py', add_help=False, description='Interpret XML reprezentace kódu. Pro správnou funkčnost je nutná verze Python3.6.')
         parser.add_argument('--help', dest='help', action='store_true', default=False, help='nápověda')
-        parser.add_argument('--source', dest='source')
+        parser.add_argument('--source', dest='source', default=None)
+        parser.add_argument('--input', dest='input', default=None)
         parser.add_argument('--stats', dest='stats', default=None)
         parser.add_argument('--insts', dest='insts', action='store_true', default=None)
         parser.add_argument('--vars', dest='vars', action='store_true', default=None)
@@ -1363,6 +1390,11 @@ class interpret:
     # Funkce se stará o validování argumentů (nevhodné rozmezí hodnot, nevhodné kombinace argumentů atp.)
     #
     def validateCmdArgs(self, opts): 
+
+        # alespoň jeden z parametrů (--source nebo --input) musí být vždy zadán
+        # pokud jeden z nich chybí, tak jsou odpovídající data načítána ze standardního vstupu.
+        if(opts.source == None and opts.input == None):
+            self.error('Alespoň jeden z parametrů (--source nebo --input) musí být vždy zadán', 10);
 
         # chybí-li při zadání --stats --insts či --vars parametr, jedná se o chybu 10
         if opts.stats != None and opts.insts == None and opts.vars == None:
