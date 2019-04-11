@@ -43,15 +43,26 @@ class interpret:
 
     #
     # Funkce se volá hned po zavolání konstruktoru.
-    # Funkce se stará i intepretaci kódu předaného pomocí souboru argumentem --source
+    # Funkce se stará i intepretaci kódu předaného pomocí souboru argumentem --source nebo ze standartního vstupu
     #
     def run(self, opts):
 
         try:
-            tree = ET.parse(opts.source)
+            if(opts.source != None):
+                tree = ET.parse(opts.source)
+                root = tree.getroot()
+            else:
+                try:
+                    input = sys.stdin.buffer
+                except AttributeError:
+                    input = sys.stdin
+                except:
+                     self.error('Nepodařilo se načíst data ze standartního vstupu', 11)
+
+                xmlString = input.read()
+                root = ET.fromstring(xmlString)
         except ET.ParseError:
             self.error("Nevalidní formát vstupního XML", 52)
-        root = tree.getroot()
 
         # zkontrolování názvu root elementu
         if(root.tag != 'program'):
@@ -75,18 +86,18 @@ class interpret:
 
         # procházení všech instrukcí
         index = 0
-        while index <= len(tree.getroot()):
+        while index <= len(root):
 
             # nějaká instrukce chtěla skočit
             if(self.jumpTo != None):
                 index = self.jumpTo
                 self.instructionOrder = self.jumpTo + 1
                 self.jumpTo = None
-            elif(index == len(tree.getroot())):
+            elif(index == len(root)):
                 break
 
             # čti instrukci
-            child = tree.getroot()[index]
+            child = root[index]
 
             if(int(child.get('order')) != self.instructionOrder):
                 self.error('Číslování instrukcí není inkrementální po 1, číslo instrukce: ' + child.get('order') + ' by mělo být: ' + str(self.instructionOrder), 31)
