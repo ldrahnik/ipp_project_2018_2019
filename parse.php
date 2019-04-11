@@ -15,9 +15,11 @@ class Parser {
 
   private $language = 'IPPcode19';
 
+  // soubor pro zápis statistik statsOpts při aktivovaném rozšířením STATP do souboru statsFile
   private $statsFile = null;
   private $statsOpts = array();
 
+  // argumenty z příkazové řádky
   private $argvs = array();
 
   // vypíše do statistik počet řádků, na kterých se vyskytoval komentář
