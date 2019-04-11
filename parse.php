@@ -589,7 +589,7 @@ class Parser {
     $xml = new XMLWriter();
 
     $xml->openMemory();
-    $xml->setIndent(true);
+    $xml->setIndent(true);  
     $xml->startDocument($this->xmlVersion, $this->xmlEncoding);
     $xml->startElement($this->xmlRootName);
     $xml->writeAttribute('language', $this->language);
