@@ -1239,7 +1239,7 @@ class interpret:
         # v případě existujícího input souboru vezmeme z něj
         if(self.inputFile != None):
             try:
-                value = self.inputFile.readline()
+                value = self.inputFile.readline().rstrip()
             except:
                 self.error('Nepodařilo se číst soubor pro čtení vstupu',11)
         else:
