@@ -103,7 +103,7 @@ class interpret:
             self.instructionOrder+=1
             index += 1
 
-        # interpret proběhl bez chyby, uložíme statistiky do souboru dle pořadí
+        # interpret proběhl bez chyby, uložíme statistiky do souboru dle pořadí pokud je rozšíření aktivováno
         if(opts.stats != None):
             try:
                 f = open(opts.stats, "w")
