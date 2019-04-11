@@ -156,7 +156,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       }
       // Parser
       if($this->parseOnly) {
-        shell_exec("cat $file | php5.6 $this->parseScript > $tmpinputfile ; echo $? > $tmprcfile");
+        shell_exec("cat $file | php7.3 $this->parseScript > $tmpinputfile ; echo $? > $tmprcfile");
         $this->results[$file]['infilediff'] = shell_exec("diff $infile $tmpinputfile");
         $amongrc = file_get_contents($tmprcfile);
         $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
