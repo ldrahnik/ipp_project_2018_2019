@@ -6,6 +6,8 @@
 LOGIN = xdrahn00
 FILES = Makefile parse.php rozsireni interpret.py test.php -C doc readme1.pdf
 
+all: tex tar
+
 tar:
 	tar -cvzf $(LOGIN).tgz $(FILES)
 
