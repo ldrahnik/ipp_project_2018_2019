@@ -195,13 +195,9 @@ parametr se nesmí kombinovat s parametrem --int-script)
           } else {
              shell_exec("python3.6 $this->interpretScript --source $tmpinputfile --input $infile > $tmpoutputfile ; echo $? > $tmprcfile");
           }
-          $this->results[$file]['outfilediff'] = shell_exec("diff $outfile $tmpoutputfile");
-          printf($this->results[$file]['outfilediff']);
-        } else {
-          $this->results[$file]['outfilediff'] = "unknown";
+          shell_exec("diff -w $outfile $tmpoutputfile ; echo $? > $tmpdiffrcfile");
+          $this->results[$file]['outfilediff'] = file_get_contents($tmpdiffrcfile);
         }
-      } else {
-        $this->results[$file]['outfilediff'] = "unknown";
       }
 
       $amongrc = file_get_contents($tmprcfile);
@@ -211,7 +207,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $this->results[$file]['rcfilediff'] = $rc == $amongrc ? "true" : "false";
 
       // Je nutné smazat dočasné soubory (sloužily pouze k porovnání)
-      if(file_exists($tmprcfile))
+      /*if(file_exists($tmprcfile))
         unlink($tmprcfile);
 
       if(file_exists($tmpinputfileWithFile))
@@ -224,7 +220,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
         unlink($tmpoutputfile);
 
       if(file_exists($tmpinputfile))
-        unlink($tmpinputfile);
+        unlink($tmpinputfile);*/
     }
     return 0;
   }
@@ -330,14 +326,14 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $testPartialResult = 0;
       $testPartialCount = 0;
 
-      $infilleddiff = $info['infilediff'] == 0 ? "true" : "false";
-
       if(!$this->intOnly) {
+        $infilleddiff = $info['infilediff'] == 0 ? "true" : "false";
         $testPartialCount++;      
         if($infilleddiff == "true") $testPartialResult++;
       }
 
       if(!$this->parseOnly) {
+        $outputfilediff = $info['outfilediff'] == 0 ? "true" : "false";
         $testPartialCount++;
         if($outputfilediff == "true") $testPartialResult++;
       }
