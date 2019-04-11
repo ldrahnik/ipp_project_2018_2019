@@ -154,16 +154,20 @@ parametr se nesmí kombinovat s parametrem --int-script)
           return 12;
         }
       }
+
       // Parser
-      if($this->parseOnly) {
+      $amongrc = "0";
+      if(!$this->intOnly) {
         shell_exec("cat $file | php7.3 $this->parseScript > $tmpinputfile ; echo $? > $tmprcfile");
         $this->results[$file]['infilediff'] = shell_exec("diff $infile $tmpinputfile");
         $amongrc = file_get_contents($tmprcfile);
         $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
       }
+
       // Interpret
-      if($this->intOnly) {
+      if(!$this->parseOnly) {
         if($amongrc == "0") {
+          print("fgdfd");
           shell_exec("python3.6 $this->interpretScript --source $tmpinputfile > $tmpoutputfile ; echo $? > $tmprcfile");
           $this->results[$file]['outfilediff'] = shell_exec("diff $outfile $tmpoutputfile");
         } else {
