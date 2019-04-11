@@ -174,6 +174,16 @@ class interpret:
         return True
 
     #
+    # Funkce slouží pro validování zda jde převést zápis na float či nikoliv.
+    #
+    def isfloat(self, value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    #
     # Funkce slouží pro kontrolu názvu proměnné předané v arg
     #
     # Identifikátor proměnné se skládá ze dvou částí oddělených
@@ -203,19 +213,22 @@ class interpret:
         # speciální výjimka pro prázdný strig
         if(arg.get("type") == "string" and (not arg.text or re.match('^.*$', arg.text) != None)):
             string = True
+        floattype = False
+        if(arg.get("type") == "float" and self.isfloat(arg.text) == True):
+            floattype = True
 
-        if(string == True or int == True or bool == True):
+        if(string == True or int == True or bool == True or floattype == True):
             return True;
 
         return False
 
     #
-    # Funkce kontroluje, zda je zadaný type symbolu správný, jestliže platí Type ∈ {int, string, bool} vrací true, pakliže ne, false.
+    # Funkce kontroluje, zda je zadaný type symbolu správný, jestliže platí Type ∈ {int, string, bool, float} vrací true, pakliže ne, false.
     #
     def isValidType(self, arg):
         if(arg.get("type") != 'type'):
             return False
-        if(re.match('^(string|int|bool){1}$', arg.text) == None):
+        if(re.match('^(string|int|bool|float){1}$', arg.text) == None):
             return False
         return True
 
@@ -778,6 +791,42 @@ class interpret:
         self.GF[self.getSymbValue(args[0])] = {"value": char, "type": "string"}
 
     #
+    # Instruction FLOAT2INT
+    #
+    def float2intIns(self, args):
+        if(len(args) != 2):
+            self.error('U instrukce FLOAT2INT musí být počet argumentů roven 2', 52)
+        if(self.isValidVar(args[0]) == False):
+            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
+        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
+            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
+        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "int" and
+            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
+            self.error('Proměnná není int', 53)
+        if(self.isValidSymb(args[1]) == False):
+            self.error('Symbol není validní', 53)
+
+        intvalue = 0
+        if(self.isValidVar(args[1]) == False):
+            if(args[1].get("type") != 'float'):
+                self.error('Symbol není float', 53)
+            try:
+                intvalue = int(float(args[1].text))
+            except:
+                self.error('Není validní hodnota', 58)
+        else:
+            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "float"):
+                self.error('Symbol není float', 53)
+
+            try:
+                intvalue = int(float(self.GF.get(self.getSymbValue(args[1])).get("value")))
+            except:
+                self.error('Není validní hodnota', 58)
+
+        # uložení hodnoty int
+        self.GF[self.getSymbValue(args[0])] = {"value": intvalue, "type": "int"}
+
+    #
     # Instruction NOT
     #
     def notIns(self, args):
@@ -1222,6 +1271,43 @@ class interpret:
         self.GF[self.getSymbValue(args[0])] = {"value": char, "type": "string"}
 
     #
+    # Instruction INT2FLOAT
+    #
+    def int2floatIns(self, args):
+        if(len(args) != 2):
+            self.error('U instrukce INT2FLOAT musí být počet argumentů roven 2', 52)
+        if(self.isValidVar(args[0]) == False):
+            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
+        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
+            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
+        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "float" and
+            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
+            self.error('Proměnná není float', 53)
+
+        if(self.isValidSymb(args[1]) == False):
+            self.error('Symbol není validní', 53)
+
+        floatvalue = 0
+        if(self.isValidVar(args[1]) == False):
+            if(args[1].get("type") != 'int'):
+                self.error('Symbol není int', 53)
+            try:
+                floatvalue = float(int(args[1].text))
+            except:
+                self.error('Není validní hodnota', 58)
+        else:
+            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "int"):
+                self.error('Symbol není int', 53)
+
+            try:
+                floatvalue = float(int(self.GF.get(self.getSymbValue(args[1])).get("value")))
+            except:
+                self.error('Není validní hodnota', 58)
+
+        # nastavení hodnoty
+        self.GF[self.getSymbValue(args[0])] = {"value": floatvalue, "type": "float"}
+
+    #
     # Instruction READ
     #
     def readIns(self, args):
@@ -1275,6 +1361,10 @@ class interpret:
             self.moveIns(args)
         elif(upperOpCode == 'INT2CHAR'):
             self.int2charIns(args)
+        elif(upperOpCode == 'INT2FLOAT'):
+            self.int2floatIns(args)
+        elif(upperOpCode == 'FLOAT2INT'):
+            self.float2intIns(args)
             #'CREATEFRAME':
             #'PUSHFRAME':
             #'RETURN':
