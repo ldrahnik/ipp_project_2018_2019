@@ -13,7 +13,7 @@
 \usepackage{courier}
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{Implementační dokumentace k 1. úloze do IPP 2018/2019\\
+\lhead{Implementační dokumentace k 2. úloze do IPP 2018/2019\\
 Jméno a příjmení: Lukáš Drahník\\
 Login: xdrahn00}
 \rfoot{Page \thepage}
@@ -33,16 +33,14 @@ Login: xdrahn00}
 
   Všechny moduly obsahují nápovědu.
 
-\section{Parser (\texttt{parse.php})}
-  Parser je dle zadání psán pro php verzi 7.3. Vzhledem k návrhu všech částí je zde funkce na zpracování argumentů (\texttt{parseArgs}), na parsování vstupu (\texttt{parseLanguage}) a na výpis na standartní výstup (\texttt{writeXml}).
+\section{Interpret (\texttt{interpret.py})}
+  Interpret je dle zadání psán pro python a verzi 3.6. Vzhledem k návrhu všech částí je i zde funkce na zpracování a validování argumentů (\texttt{parseCmdArgs, validateCmdArgs}) a provedení samotného programu (\texttt{run}).
 
-  Nejdelší funkce a jádro parseru je metoda \texttt{parseLanguage} pro kterou byla vytvořena řada podpůrných funkcí ověřujících například validitu symbolu, labelu, proměnné, konstanty. Tyto podpůrné funkce využívají metodu \texttt{preg_match} pro práci s regulárními výrazy v jazyce php.
-  Tato funkce je implementovaná jako velký switch do kterého se dostanou všechny řádky ze vstupu obsahující instrukce bez komentářů, bez mezer. Pokud zadaná instrukce neexistuje, vrací se chyba, pokud instrukce obsahuje nepovolený počet argumentů, špatné typy argumentů atd. vrací se chyba.
-  Funkce \texttt{writeXml} využívá \texttt{XMLWriter}.
+  Intepretování programu má řadu podpůrných funkcí, stejně jako v \texttt{parse.php} jsou zde funkce na validování předaného XML, používá se zde modul \texttt{xml.etree.ElementTree}, zkráceně \texttt{ET}, dále je zde velký switch pro instrukci, které jsou dále psány jako jednotlivé funkce. U každé funkce se kontroluje počet operandů, typ operandů, zda proměnná existuje a další náležitosti.
 
-\subsection{Rozšíření STATP}
+  Na regulární výrazy použité především pro kontrolu názvů je použit modul \texttt{re} a metoda \texttt{match}, obdoba php metody \texttt{preg\_match}.
 
-  Vzhledem k naimplementovanému rozšíření STATP, které se týká pouze parseru byla vytvořena funkce \texttt{writeStats}, která zapisuje do uvedeného souboru statistiky (počet řádků s komentářem, počet instrukcí, počet podmíněných a nepodmíněných skoků, počet nadefinovaných návěští) dle pořadí v argumentech (každé na zvláštní řádek) v případě vyžádání rozšíření.
+  U instrukce \texttt{BREAK} se vypisuje obsah všech rámců (GF, LF, TF) a hodnoty případného rozšíření \texttt{STATI}.
 
 \section{Vytváření archivu}
   Celý projekt je zabalen do souboru s příponou .tar dle zadání a to pomocí příkazu make tar v souboru Makefile.
