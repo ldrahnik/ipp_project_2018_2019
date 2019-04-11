@@ -1336,7 +1336,7 @@ class interpret:
         parser = argparse.ArgumentParser(prog='python3.6 interpret.py', add_help=False, description='Interpret XML reprezentace kódu. Pro správnou funkčnost je nutná verze Python3.6.')
         parser.add_argument('--help', dest='help', action='store_true', default=False, help='nápověda')
         parser.add_argument('--source', dest='source')
-        parser.add_argument('--stats', dest='stats')
+        parser.add_argument('--stats', dest='stats', default=None)
         parser.add_argument('--insts', dest='insts', action='store_true', default=None)
         parser.add_argument('--vars', dest='vars', action='store_true', default=None)
 
@@ -1364,9 +1364,13 @@ class interpret:
     #
     def validateCmdArgs(self, opts): 
 
-        # chybí-li při zadání --insts či --vars parametr --stats, jedná se o chybu 10
-        if opts.stats == None and (opts.insts != None or opts.vars != None):
-            self.error('Chybí parametr --stats.', 10)
+        # chybí-li při zadání --stats --insts či --vars parametr, jedná se o chybu 10
+        if opts.stats != None and opts.insts == None and opts.vars == None:
+            self.error('Zadaný parametr --stats vyžaduje alespoň jeden z parametrů --insts (pro počítání instrukcí) či parametr --vars (pro počítání maximálního počtu inicializovaných proměnných).', 10)
+
+        # chybí-li při zadání --insts či --vars parametr --stats, jedná se také o chybu 10
+        if (opts.insts != None or opts.vars != None) and opts.stats == None:
+            self.error('Zadaný parametr --stats vyžaduje alespoň jeden z parametrů --insts (pro počítání instrukcí) či parametr --vars (pro počítání maximálního počtu inicializovaných proměnných).', 10)
 
     #
     # Vypíše error message na standartní chybový výstup a ukončí program se specifikovaným kódem
