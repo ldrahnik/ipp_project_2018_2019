@@ -126,6 +126,8 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $tmpinputfile = "$infile.tmp";
       $tmpoutputfile = "$outfile.tmp";
       $tmprcfile = "$rcfile.tmp";
+      $tmpinputfileWithFile = "$tmpinputfile.ttmp";
+
       // chyba při otevírání vstupních souborů (např. neexistence, nedostatečné oprávnění).
       if(!is_readable($file)) {
         return 11;
@@ -154,12 +156,23 @@ parametr se nesmí kombinovat s parametrem --int-script)
           return 12;
         }
       }
+      if(!is_readable($tmpinputfile)) {
+        if(!touch($tmpinputfile)) {
+          return 12;
+        }
+      }
+      if(!is_readable($tmpinputfileWithFile)) {
+        if(!touch($tmpinputfileWithFile)) {
+          return 12;
+        }
+      }
 
       // Parser
       $amongrc = "0";
       if(!$this->intOnly) {
-        shell_exec("cat $file | php7.3 $this->parseScript > $tmpinputfile ; echo $? > $tmprcfile");
-        $this->results[$file]['infilediff'] = shell_exec("diff $infile $tmpinputfile");
+        shell_exec("cat $file | php7.3 $this->parseScript > $tmpinputfileWithFile ; echo $? > $tmprcfile");
+        shell_exec("grep -F -v -f $file -w $tmpinputfileWithFile > $tmpinputfile");
+        $this->results[$file]['infilediff'] = shell_exec("diff -w $outfile $tmpinputfile");
         $amongrc = file_get_contents($tmprcfile);
         $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
       }
@@ -167,17 +180,34 @@ parametr se nesmí kombinovat s parametrem --int-script)
       // Interpret
       if(!$this->parseOnly) {
         if($amongrc == "0") {
-          shell_exec("python3.6 $this->interpretScript --source $tmpinputfile > $tmpoutputfile ; echo $? > $tmprcfile");
+
+          // --int-only potřebuje přímo .src soubor (parser se na zpracování .in souboru na .src nepoužije)
+          if($this->intOnly) {
+             shell_exec("python3.6 $this->interpretScript --source $file --input $infile > $tmpoutputfile ; echo $? > $tmprcfile");
+          } else {
+             shell_exec("python3.6 $this->interpretScript --source $tmpinputfile --input $infile > $tmpoutputfile ; echo $? > $tmprcfile");
+          }
           $this->results[$file]['outfilediff'] = shell_exec("diff $outfile $tmpoutputfile");
+          printf($this->results[$file]['outfilediff']);
         } else {
           $this->results[$file]['outfilediff'] = "unknown";
         }
-        $this->results[$file]['rcfilediff'] = shell_exec("diff -w $rcfile $tmprcfile");
+      } else {
+        $this->results[$file]['outfilediff'] = "unknown";
       }
+
+      $amongrc = file_get_contents($tmprcfile);
+      $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
+      $rc = file_get_contents($rcfile);
+      $rc = str_replace(array("\r", "\n"), '', $rc);
+      $this->results[$file]['rcfilediff'] = $rc == $amongrc ? "true" : "false";
 
       // Je nutné smazat dočasné soubory (sloužily pouze k porovnání)
       if(file_exists($tmprcfile))
         unlink($tmprcfile);
+
+      if(file_exists($tmpinputfileWithFile))
+        unlink($tmpinputfileWithFile);
 
       if(file_exists($tmpoutputfile))
         unlink($tmpoutputfile);
@@ -213,7 +243,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $this->displayHelp();
     }
     // parameter int-only se nesmí kombinovat s parametrem --parse-script
-    if(array_key_exists('int-only', $options) && array_key_exists('parse-script', $options)) {
+    if(array_key_exists('int-only', $options) && array_key_exists('parse-only', $options)) {
        return 10;
     }
     if(array_key_exists('parse-only', $options)) {
@@ -285,14 +315,29 @@ parametr se nesmí kombinovat s parametrem --int-script)
     foreach($this->results as $srcfile => $info) {
       $testResult = "false";
       $name = explode(".", basename($srcfile))[0];
-      $infilleddiff = $info['infilediff'] ? "false" : "true";
-      $outputfilediff = $info['outfilediff'] ? "false" : "true";
-      $rcfilediff = $info['rcfilediff'] ? "false" : "true";
+
       $testPartialResult = 0;
-      if($infilleddiff == "true") $testPartialResult++;
-      if($outputfilediff == "true") $testPartialResult++;
+      $testPartialCount = 0;
+
+      $infilleddiff = $info['infilediff'] == 0 ? "true" : "false";
+
+      if(!$this->intOnly) {
+        $testPartialCount++;      
+        if($infilleddiff == "true") $testPartialResult++;
+      }
+
+      if(!$this->parseOnly) {
+        $testPartialCount++;
+        if($outputfilediff == "true") $testPartialResult++;
+      }
+
+      $rcfilediff = $info['rcfilediff'];
+      $testPartialCount++;
+
       if($rcfilediff == "true") $testPartialResult++;
-      if($infilleddiff == "true" && $outputfilediff == "true" && $rcfilediff == "true") {
+      if(((isset($infilleddiff) && $infilleddiff == "true") || !isset($infilleddiff)) &&
+         ((isset($outputfilediff) && $outputfilediff == "true") || !isset($outputfilediff)) &&
+         ((isset($rcfilediff) && $rcfilediff == "true") || !isset($rcfilediff))) {
         $successTests++;
         $testResult = "true";
       }
@@ -311,16 +356,25 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $resultHeadingStyleColor = $testResult == "true" ? 'color: green;' : 'color: red;';
       $resultHeadingStyle = "style=\"$resultHeadingStyleColor\"";
 
-      fwrite(STDOUT, "\n\n<h1 $resultHeadingStyle>$testIterator. $name ($testPartialResult/3)</h1>\n");
+      fwrite(STDOUT, "\n\n<h1 $resultHeadingStyle>$testIterator. $name ($testPartialResult/$testPartialCount)</h1>\n");
       fwrite(STDOUT, "<p>Složka: $dirname</p>\n");
       fwrite(STDOUT, "\n\nProvedené testy:\n");
       fwrite(STDOUT, "<ul>\n");
-      $interpretInputHeadingStyleColor = $infilleddiff == "true" ? 'color: green;' : 'color: red;';
-      $interpretInputHeadingStyle = "style=\"$interpretInputHeadingStyleColor\"";
-      fwrite(STDOUT, "<li>Test porovnání vstupu intepretace: <span $interpretInputHeadingStyle>$infilleddiff</li>\n");
-      $interpretOutputHeadingStyleColor = $outputfilediff == "true" ? 'color: green;' : 'color: red;';
-      $interpretOutputHeadingStyle = "style=\"$interpretOutputHeadingStyleColor\"";
-      fwrite(STDOUT, "<li>Test porovnání výstupu interpretace: <span $interpretOutputHeadingStyle>$outputfilediff</li>\n");
+
+      // Pouze parser
+      if(!$this->intOnly) {
+        $interpretInputHeadingStyleColor = $infilleddiff == "true" ? 'color: green;' : 'color: red;';
+        $interpretInputHeadingStyle = "style=\"$interpretInputHeadingStyleColor\"";
+        fwrite(STDOUT, "<li>Test porovnání výstupu parseru: <span $interpretInputHeadingStyle>$infilleddiff</li>\n");
+      }
+
+      // Pouze interpret
+      if(!$this->parseOnly) {
+        $interpretOutputHeadingStyleColor = $outputfilediff == "true" ? 'color: green;' : 'color: red;';
+        $interpretOutputHeadingStyle = "style=\"$interpretOutputHeadingStyleColor\"";
+        fwrite(STDOUT, "<li>Test porovnání výstupu interpretace: <span $interpretOutputHeadingStyle>$outputfilediff</li>\n");
+      }
+
       $returnCodeHeadingColor = $rcfilediff == "true" ? 'color: green;' : 'color: red;';
       $returnCodeHeadingStyleColor = "style=\"$returnCodeHeadingColor\"";
       fwrite(STDOUT, "<li>Test návratového kódu: <span $returnCodeHeadingStyleColor>$rcfilediff</span></li>\n");
