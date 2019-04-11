@@ -127,6 +127,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $tmpoutputfile = "$outfile.tmp";
       $tmprcfile = "$rcfile.tmp";
       $tmpinputfileWithFile = "$tmpinputfile.ttmp";
+      $tmpdiffrcfile = "$tmpinputfile.rc.ttmp";
 
       // chyba při otevírání vstupních souborů (např. neexistence, nedostatečné oprávnění).
       if(!is_readable($file)) {
@@ -167,12 +168,19 @@ parametr se nesmí kombinovat s parametrem --int-script)
         }
       }
 
+      if(!is_readable($tmpdiffrcfile)) {
+        if(!touch($tmpdiffrcfile)) {
+          return 12;
+        }
+      }
+
       // Parser
       $amongrc = "0";
       if(!$this->intOnly) {
         shell_exec("cat $file | php7.3 $this->parseScript > $tmpinputfileWithFile ; echo $? > $tmprcfile");
         shell_exec("grep -F -v -f $file -w $tmpinputfileWithFile > $tmpinputfile");
-        $this->results[$file]['infilediff'] = shell_exec("diff -w $outfile $tmpinputfile");
+        shell_exec("diff -w $outfile $tmpinputfile ; echo $? > $tmpdiffrcfile");
+        $this->results[$file]['infilediff'] = file_get_contents($tmpdiffrcfile);
         $amongrc = file_get_contents($tmprcfile);
         $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
       }
@@ -208,6 +216,9 @@ parametr se nesmí kombinovat s parametrem --int-script)
 
       if(file_exists($tmpinputfileWithFile))
         unlink($tmpinputfileWithFile);
+
+      if(file_exists($tmpdiffrcfile))
+        unlink($tmpdiffrcfile);
 
       if(file_exists($tmpoutputfile))
         unlink($tmpoutputfile);
