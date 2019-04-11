@@ -7,6 +7,8 @@ exit($result);
  */
 class Test {
   private $argvs;
+  private $parseOnly = false;
+  private $intOnly = false;
   private $recursive = false;
   private $directory;
   private $parseScript;
@@ -27,7 +29,13 @@ class Test {
       --int-script=file soubor se skriptem v Python 3.6 pro interpret XML reprezentace kódu
         v IPPcode19 (chybí-li tento parametr, tak implicitní hodnotou je interpret.py uložený v aktuálním adresáři)
       --testlist=file Slouží pro explicitní zadání seznamu adresářů (zadaných relativními či absolutními cestami) a případně i souborů s testy (zadává se soubor s příponou .src) formou externího souboru file místo načtení testů z aktuálního adresáře (nelze kombinovat s parametrem --directory)
-      --match=regexp Slouží pro výběr testů jejichž jmémo je bez přípony (ne cesta) odpovídá zadanému regulárnímu výrazu regexp dle PCRE syntaxe.\n";
+      --match=regexp Slouží pro výběr testů jejichž jmémo je bez přípony (ne cesta) odpovídá zadanému regulárnímu výrazu regexp dle PCRE syntaxe
+      --parse-only Bude testován pouze skript pro analýzu zdrojového kódu v IPPcode19 (tento
+parametr se nesmí kombinovat s parametrem --int-script)
+      --int-only Bude testován pouze skript pro interpret XML reprezentace kódu v IPPcode19
+(tento parametr se nesmí kombinovat s parametrem --parse-script)
+.\n";
+
   /**
    * Konstruktor přijímající argumenty uvedené v příkazové řádce.
    */
@@ -147,18 +155,22 @@ class Test {
         }
       }
       // Parser
-      shell_exec("cat $file | php5.6 $this->parseScript > $tmpinputfile ; echo $? > $tmprcfile");
-      $this->results[$file]['infilediff'] = shell_exec("diff $infile $tmpinputfile");
-      $amongrc = file_get_contents($tmprcfile);
-      $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
-      if($amongrc == "0") {
-        // Interpret
-        shell_exec("python3.6 $this->interpretScript --source $tmpinputfile > $tmpoutputfile ; echo $? > $tmprcfile");
-        $this->results[$file]['outfilediff'] = shell_exec("diff $outfile $tmpoutputfile");
-      } else {
-        $this->results[$file]['outfilediff'] = "unknown";
+      if($this->parseOnly) {
+        shell_exec("cat $file | php5.6 $this->parseScript > $tmpinputfile ; echo $? > $tmprcfile");
+        $this->results[$file]['infilediff'] = shell_exec("diff $infile $tmpinputfile");
+        $amongrc = file_get_contents($tmprcfile);
+        $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
       }
-      $this->results[$file]['rcfilediff'] = shell_exec("diff -w $rcfile $tmprcfile");
+      // Interpret
+      if($this->intOnly) {
+        if($amongrc == "0") {
+          shell_exec("python3.6 $this->interpretScript --source $tmpinputfile > $tmpoutputfile ; echo $? > $tmprcfile");
+          $this->results[$file]['outfilediff'] = shell_exec("diff $outfile $tmpoutputfile");
+        } else {
+          $this->results[$file]['outfilediff'] = "unknown";
+        }
+        $this->results[$file]['rcfilediff'] = shell_exec("diff -w $rcfile $tmprcfile");
+      }
     }
     return 0;
   }
@@ -168,6 +180,8 @@ class Test {
    */
   function parseArgs() {
     $longopts  = array(
+        "parse-only",
+        "int-only",
         "recursive",
         "directory:",
         "parse-script:",
@@ -184,6 +198,16 @@ class Test {
         return 10;
       }
       $this->displayHelp();
+    }
+    // parameter int-only se nesmí kombinovat s parametrem --parse-script
+    if(array_key_exists('int-only', $options) && array_key_exists('parse-script', $options)) {
+       return 10;
+    }
+    if(array_key_exists('parse-only', $options)) {
+      $this->parseOnly = true;
+    }
+    if(array_key_exists('int-only', $options)) {
+      $this->intOnly = true;
     }
     if(array_key_exists('recursive', $options)) {
       $this->recursive = true;
