@@ -207,7 +207,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $this->results[$file]['rcfilediff'] = $rc == $amongrc ? "true" : "false";
 
       // Je nutné smazat dočasné soubory (sloužily pouze k porovnání)
-      /*if(file_exists($tmprcfile))
+      if(file_exists($tmprcfile))
         unlink($tmprcfile);
 
       if(file_exists($tmpinputfileWithFile))
@@ -220,7 +220,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
         unlink($tmpoutputfile);
 
       if(file_exists($tmpinputfile))
-        unlink($tmpinputfile);*/
+        unlink($tmpinputfile);
     }
     return 0;
   }
