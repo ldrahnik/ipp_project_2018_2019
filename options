@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="Windows-1251"?>
+<orders>
+<OrdersTransaction>
+<Item>
+<!-- Changed Element:old -->
+<Description>Marker</Description>
+<!-- Changed Element:new -->
+<Description>Mark er</Description>
+</Item>
+</OrdersTransaction>
+<OrdersTransaction>
+<Item>
+<!-- Changed Element:old -->
+<Description>Eraser</Description>
+<!-- Changed Element:new -->
+<Description>eraser</Description>
+</Item>
+<Item>
+<!-- Added Element(s) -->
+<comment>additional comments</comment>
+</Item>
+<Item>
+<!-- Changed Element:old -->
+<Description>Highlighter</Description>
+<!-- Changed Element:new -->
+<Description>highlighter</Description>
+</Item>
+</OrdersTransaction>
+</orders>

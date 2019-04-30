@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $test = new Test($argv);
 $result = $test->run();
 exit($result);
@@ -179,7 +179,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       if(!$this->intOnly) {
         shell_exec("cat $file | php7.3 $this->parseScript > $tmpinputfileWithFile ; echo $? > $tmprcfile");
         shell_exec("grep -F -v -f $file -w $tmpinputfileWithFile > $tmpinputfile");
-        shell_exec("diff -w $outfile $tmpinputfile ; echo $? > $tmpdiffrcfile");
+        shell_exec("java -jar jexamxml.jar $outfile $tmpinputfile options ; echo $? > $tmpdiffrcfile");
         $this->results[$file]['infilediff'] = file_get_contents($tmpdiffrcfile);
         $amongrc = file_get_contents($tmprcfile);
         $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
@@ -207,7 +207,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $this->results[$file]['rcfilediff'] = $rc == $amongrc ? "true" : "false";
 
       // Je nutné smazat dočasné soubory (sloužily pouze k porovnání)
-      /*if(file_exists($tmprcfile))
+      if(file_exists($tmprcfile))
         unlink($tmprcfile);
 
       if(file_exists($tmpinputfileWithFile))
@@ -220,7 +220,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
         unlink($tmpoutputfile);
 
       if(file_exists($tmpinputfile))
-        unlink($tmpinputfile);*/
+        unlink($tmpinputfile);
     }
     return 0;
   }
