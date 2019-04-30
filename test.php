@@ -207,7 +207,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $this->results[$file]['rcfilediff'] = $rc == $amongrc ? "true" : "false";
 
       // Je nutné smazat dočasné soubory (sloužily pouze k porovnání)
-      if(file_exists($tmprcfile))
+      /*if(file_exists($tmprcfile))
         unlink($tmprcfile);
 
       if(file_exists($tmpinputfileWithFile))
@@ -220,7 +220,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
         unlink($tmpoutputfile);
 
       if(file_exists($tmpinputfile))
-        unlink($tmpinputfile);
+        unlink($tmpinputfile);*/
     }
     return 0;
   }
@@ -332,14 +332,14 @@ parametr se nesmí kombinovat s parametrem --int-script)
         if($infilleddiff == "true") $testPartialResult++;
       }
 
-      if(!$this->parseOnly) {
+      $rcfilediff = $info['rcfilediff'];
+      $testPartialCount++;
+
+      if(!$this->parseOnly && array_key_exists('outfilediff', $info) && $rcfilediff != "true") {
         $outputfilediff = $info['outfilediff'] == 0 ? "true" : "false";
         $testPartialCount++;
         if($outputfilediff == "true") $testPartialResult++;
       }
-
-      $rcfilediff = $info['rcfilediff'];
-      $testPartialCount++;
 
       if($rcfilediff == "true") $testPartialResult++;
       if(((isset($infilleddiff) && $infilleddiff == "true") || !isset($infilleddiff)) &&
@@ -376,7 +376,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       }
 
       // Pouze interpret
-      if(!$this->parseOnly) {
+      if(!$this->parseOnly && array_key_exists('outfilediff', $info) && $rcfilediff != "true") {
         $interpretOutputHeadingStyleColor = $outputfilediff == "true" ? 'color: green;' : 'color: red;';
         $interpretOutputHeadingStyle = "style=\"$interpretOutputHeadingStyleColor\"";
         fwrite(STDOUT, "<li>Test porovnání výstupu interpretace: <span $interpretOutputHeadingStyle>$outputfilediff</li>\n");
