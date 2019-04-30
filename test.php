@@ -128,6 +128,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       $tmprcfile = "$rcfile.tmp";
       $tmpinputfileWithFile = "$tmpinputfile.ttmp";
       $tmpdiffrcfile = "$tmpinputfile.rc.ttmp";
+      $tmpjexamxmljar = "$tmpinputfile.jexamxml.tmp";
 
       // chyba při otevírání vstupních souborů (např. neexistence, nedostatečné oprávnění).
       if(!is_readable($file)) {
@@ -167,9 +168,19 @@ parametr se nesmí kombinovat s parametrem --int-script)
           return 12;
         }
       }
+      if(!is_readable($tmpdiffrcfile)) {
+        if(!touch($tmpdiffrcfile)) {
+          return 12;
+        }
+      }
 
       if(!is_readable($tmpdiffrcfile)) {
         if(!touch($tmpdiffrcfile)) {
+          return 12;
+        }
+      }
+      if(!is_readable($tmpjexamxmljar)) {
+        if(!touch($tmpjexamxmljar)) {
           return 12;
         }
       }
@@ -179,7 +190,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       if(!$this->intOnly) {
         shell_exec("cat $file | php7.3 $this->parseScript > $tmpinputfileWithFile ; echo $? > $tmprcfile");
         shell_exec("grep -F -v -f $file -w $tmpinputfileWithFile > $tmpinputfile");
-        shell_exec("java -jar jexamxml.jar $outfile $tmpinputfile options ; echo $? > $tmpdiffrcfile");
+        shell_exec("java -jar jexamxml.jar $outfile $tmpinputfile $tmpjexamxmljar options ; echo $? > $tmpdiffrcfile");
         $this->results[$file]['infilediff'] = file_get_contents($tmpdiffrcfile);
         $amongrc = file_get_contents($tmprcfile);
         $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
@@ -221,6 +232,9 @@ parametr se nesmí kombinovat s parametrem --int-script)
 
       if(file_exists($tmpinputfile))
         unlink($tmpinputfile);
+
+      if(file_exists($tmpjexamxmljar))
+        unlink($tmpjexamxmljar);
     }
     return 0;
   }
