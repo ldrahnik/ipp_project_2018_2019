@@ -1479,7 +1479,7 @@ class interpret:
         # validování argumentů
         self.validateCmdArgs(result)
 
-        # --stats; order is important!
+        # --stats; na pořadí záleží
         if(result.stats != None):
             for arg in sys.argv:
                 if(arg == '--insts' or arg == '--vars'):
