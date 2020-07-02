@@ -1,11 +1,14 @@
 ﻿<?php
+
 $test = new Test($argv);
 $result = $test->run();
 exit($result);
+
 /**
  * Testovací rámec.
  */
 class Test {
+
   private $argvs;
   private $parseOnly = false;
   private $intOnly = false;
@@ -13,12 +16,16 @@ class Test {
   private $directory;
   private $parseScript;
   private $interpretScript;
+
   // Slouží pro explicitní zadání seznamu adresářů (zadaných relativními či absolutními cestami) a případně i souborů s testy (zadává se soubor s příponou .src)-
   private $testlist = null;
+
   // Dále podporujte parametr --match=regexp pro výběr testů, jejichž jméno bez přípony (ne cesta) odpovídá zadanému regulárnímu výrazu regexp dle PCRE syntaxe.
   private $match = null;
+
   // Data výsledků testů a jejich porovnání s originálními souboru pomocí diff zobrazující se v HTML stránce.
   private $results = array();
+
   const HELP_MESSAGE = "Testovací rámec:
       --help vypíše na standardní výstup nápovědu skriptu (nenačítá žádný vstup)
       --directory=path testy bude hledat v zadaném adresáři (chybí-li tento parametr, tak skript prochází aktuální adresář)
@@ -42,6 +49,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
   function __construct($argvs) {
     $this->argvs = $argvs;
   }
+
   /**
    * Funkce se volá hned po zavolání konstruktoru.
    * Funkce poté volá funkci na parsování argumentů.
@@ -80,6 +88,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
     }
     return 0;
   }
+
   /**
    * Funkce slouží jako wrapper pro funkci glob ke které přidává možnost použít rekurzivní procházení složek či nikoliv.
    */
@@ -98,6 +107,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
     }
 	  return $files;
   }
+
  /**
   * Funkce spustí testy, pokud existuje zadaný soubor --testlist=file tak prioritizuje soubor daný rozšířením, pokud ne,
   * prohledává uvedenou složku kde hledá všechny .src soubory a ke konkrétnímu testu dohledává vždy spjaté soubory(.rc, .out, .in).
@@ -233,6 +243,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
     }
     return 0;
   }
+
   /**
    * Funkce zpracuje pomocí funkce getopt argumenty, dále následuje jen nastavování
    * proměnných dle uvedených parametrů a kontrola zakázaných kombinací argumentů.
@@ -298,6 +309,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
     }
     return 0;
   }
+
   /**
    * Funkce zobrazí nápovědu.
    */
@@ -305,6 +317,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
     echo self::HELP_MESSAGE;
     exit(0);
   }
+
  /**
   * Zapíše na standartní výstup HTML obsahující výsledky provedených testů. U každého testu obsahují výsledky porovnání:
   * 1. Test porovnání vstupu intepretace (true, false)
@@ -437,4 +450,5 @@ parametr se nesmí kombinovat s parametrem --int-script)
     fwrite(STDOUT, "</html>");
   }
 }
+
 ?>
