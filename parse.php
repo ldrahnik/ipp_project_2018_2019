@@ -279,8 +279,6 @@ class Parser {
 
     while($line = fgets($stdin)) {
 
-      echo $line;
-
       // je zde komentář?
       if(preg_match('/\#/', $line)) {
         $this->commentsCount++;
