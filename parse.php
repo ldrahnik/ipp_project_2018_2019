@@ -36,6 +36,12 @@ class Parser {
 
   private $instructios = array();
 
+  // typy argumentů u funkce
+  const INS_ARG_TYPE = 'type';
+  const INS_ARG_SYMB = 'symb';
+  const INS_ARG_VAR = 'var';
+  const INS_ARG_LABEL = 'label';
+
   const HELP_MESSAGE = "Analyzátor kódu v IPPcode19:
       --help vypíše na standardní výstup nápovědu skriptu (nenačítá žádný vstup)
       --stats=file slouží pro zadání souboru file, kam se agregované statistiky
@@ -289,105 +295,44 @@ class Parser {
       // rozlož na jednotlivé intrukce dle mezer
       $exploded = explode(" ", $line);
 
-      // pokud na řádku něco je, musí to být nějaká z instrukcí nebo komentář
+      // pokud na řádku něco je, musí to být nějaká z instrukcí
       if($exploded[0]) {
         $this->codeLinesCount++;
 
-        switch(strtoupper($exploded[0])) {
+        // název instrukce
+        $ins = strtoupper($exploded[0]);
+
+        // argumenty funkce, odstraníme název funkce a reindexujeme
+        $args = $exploded;
+        unset($args[0]);
+        $args = array_values($args);
+
+        switch($ins) {
           case "MOVE":
           case "INT2TOCHAR":
           case "NOT":
-            if(count($exploded) != 3) {
-              return 23;
-            }
-            if(!$this->isCorrectVarName($exploded[1])) {
-              return 23;
-            }
-            if(!$this->isCorrectSymbName($exploded[2])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => 'var',
-                  'value' => $this->getVarName($exploded[1])
-                ),
-                '2' => array(
-                  'type' => $this->getSymbType($exploded[2]),
-                  'value' => $this->getSymbValue($exploded[2])
-                )
-              )
-            );
+            $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB));
             break;
           case "CREATEFRAME":
           case "PUSHFRAME":
           case "POPFRAME":
           case "RETURN":
           case "BREAK":
-            if(count($exploded) != 1) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0]
-            );
+            $this->ins($ins, $args);
             break;
           case "POPS":
           case "DEFVAR":
-            if(count($exploded) != 2) {
-              return 23;
-            }
-            if(!$this->isCorrectVarName($exploded[1])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => 'var',
-                  'value' => $this->getVarName($exploded[1])
-                )
-              )
-            );
+            $this->ins($ins, $args, array(Parser::INS_ARG_VAR));
             break;
           case "CALL":
             $this->jumpsCount++;
-
-            if(count($exploded) != 2) {
-              return 23;
-            }
-            if(!$this->isCorrectLabelName($exploded[1])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => 'label',
-                  'value' => $exploded[1]
-                )
-              )
-            );
+            $this->ins($ins, $args, array(Parser::INS_ARG_LABEL));
             break;
           case "PUSHS":
           case "WRITE":
-	  case "EXIT":
+          case "EXIT":
           case "DPRINT":
-            if(count($exploded) != 2) {
-              return 23;
-            }
-            if(!$this->isCorrectSymbName($exploded[1])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => $this->getSymbType($exploded[1]),
-                  'value' => $this->getSymbValue($exploded[1])
-                )
-              )
-            );
+            $this->ins($ins, $args, array(Parser::INS_ARG_SYMB));
             break;
           case "ADD":
           case "SUB":
@@ -402,140 +347,29 @@ class Parser {
           case "CONCAT":
           case "GETCHAR":
           case "SETCHAR":
-            if(count($exploded) != 4) {
-              return 23;
-            }
-            if(!$this->isCorrectVarName($exploded[1])) {
-              return 23;
-            }
-            if(!$this->isCorrectSymbName($exploded[2])) {
-              return 23;
-            }
-            if(!$this->isCorrectSymbName($exploded[3])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => 'var',
-                  'value' => $this->getVarName($exploded[1])
-                ),
-                '2' => array(
-                  'type' => $this->getSymbType($exploded[2]),
-                  'value' => $this->getSymbValue($exploded[2])
-                ),
-                '3' => array(
-                  'type' => $this->getSymbType($exploded[3]),
-                  'value' => $this->getSymbValue($exploded[3])
-                )
-              )
-            );
+            $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB));
             break;
           case "READ":
-            if(count($exploded) != 3) {
-              return 23;
-            }
-            if(!$this->isCorrectVarName($exploded[1])) {
-              return 23;
-            }
-            if(!$this->isCorrectTypeName($exploded[2])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => 'var',
-                  'value' => $this->getVarName($exploded[1])
-                ),
-                '2' => array(
-                  'type' => 'type',
-                  'value' => $exploded[2]
-                )
-              )
-            );
+            //$this->insVarType($ins, $args);
+            $this->ins($ins, $args, array(Parser::INS_ARG_VAR));
             break;
           case "STRLEN":
           case "TYPE":
-            if(count($exploded) != 3) {
-              return 23;
-            }
-            if(!$this->isCorrectVarName($exploded[1])) {
-              return 23;
-            }
-            if(!$this->isCorrectSymbName($exploded[2])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => 'var',
-                  'value' => $this->getVarName($exploded[1])
-                ),
-                '2' => array(
-                  'type' => $this->getSymbType($exploded[2]),
-                  'value' => $this->getSymbValue($exploded[2])
-                )
-              )
-            );
+            $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB));
             break;
           case "LABEL":
             $this->labelsCount++;
+            $this->insLabel($ins, $args);
+            $this->ins($ins, $args, array(Parser::INS_ARG_LABEL));
+            break;
           case "JUMP":
             $this->jumpsCount++;
-
-            if(count($exploded) != 2) {
-              return 23;
-            }
-            if(!$this->isCorrectLabelName($exploded[1])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => 'label',
-                  'value' => $exploded[1]
-                )
-              )
-            );
+            $this->ins($ins, $args, array(Parser::INS_ARG_LABEL));
             break;
           case "JUMPIFEQ":
-            $this->jumpsCount++;
           case "JUMPIFNEQ":
             $this->jumpsCount++;
-
-            if(count($exploded) != 4) {
-              return 23;
-            }
-            if(!$this->isCorrectLabelName($exploded[1])) {
-              return 23;
-            }
-            if(!$this->isCorrectSymbName($exploded[2])) {
-              return 23;
-            }
-            if(!$this->isCorrectSymbName($exploded[3])) {
-              return 23;
-            }
-            $this->instructions[$this->codeLinesCount] = array(
-              'opcode' => $exploded[0],
-              'args' => array(
-                '1' => array(
-                  'type' => 'label',
-                  'value' => $exploded[1]
-                ),
-                '2' => array(
-                  'type' => $this->getSymbType($exploded[2]),
-                  'value' => $this->getSymbValue($exploded[2])
-                ),
-                '3' => array(
-                  'type' => $this->getSymbType($exploded[3]),
-                  'value' => $this->getSymbValue($exploded[3])
-                )
-              )
-            );
+            $this->ins($ins, $args, array(Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB));
             break;
           default:
             // neznámý nebo chybný operační kód ve zdrojovém kódu zapsaném v IPPcode19
@@ -545,6 +379,71 @@ class Parser {
     }
 
     return 0;
+  }
+
+  /*
+   * Funkce se stará o ověření argumentů. Kontroluje se správné pořadí, celkový počet i konkrétní typy (var, symbol, label, type)
+   */
+  function ins($name, $args, $requiredArgs = array()) {
+
+    // počet parametrů nesedí
+    if(count($requiredArgs) != count($args)) {
+      return 23;
+    }
+
+    $argsCounter = 0;
+    $argsXml = array();
+    foreach($requiredArgs as $requiredArg) {
+      $arg = $args[$argsCounter];
+      switch($requiredArg) {
+        case Parser::INS_ARG_VAR:
+          if(!$this->isCorrectVarName($arg)) {
+            return 23;
+          }
+          $argsXml[$argsCounter++] = array(
+            'type' => 'var',
+            'value' => $this->getVarName($args[0])
+          );
+          break;
+        case Parser::INS_ARG_SYMB:
+          if(!$this->isCorrectSymbName($arg)) {
+            return 23;
+          }
+          $argsXml[$argsCounter++] = array(
+            'type' => $this->getSymbType($arg),
+            'value' => $this->getSymbValue($arg)
+          );
+          break;
+        case Parser::INS_ARG_LABEL:
+          if(!$this->isCorrectSymbName($arg)) {
+            return 23;
+          }
+          $argsXml[$argsCounter++] = array(
+            'type' => 'label',
+            'value' => $arg
+          );
+          break;
+        case Parser::INS_ARG_TYPE:
+          if(!$this->isCorrectSymbName($arg)) {
+            return 23;
+          }
+          $argsXml[$argsCounter++] = array(
+            'type' => 'type',
+            'value' => $arg
+          );
+          break;
+        default:
+          // interní chyba při volání funkce
+          return 1;
+
+        $argsCounter++;
+      }
+    }
+
+    $this->instructions[$this->codeLinesCount] = array(
+      'opcode' => $name,
+      'args' => $argsXml
+    );
   }
 
   /**
