@@ -9,6 +9,21 @@ ASSESSMENT
 ## Příklad spuštění:
 
 ```
+php7.3 parse.php --help
+Analyzátor kódu v IPPcode19:
+      --help vypíše na standardní výstup nápovědu skriptu (nenačítá žádný vstup)
+      --stats=file slouží pro zadání souboru file, kam se agregované statistiky
+      budou vypisovat (po řádcích dle pořadí v dalších parametrech)
+      --loc vypíše do statistik počet řádků s instrukcemi (nepočítají se prázdné
+       řádky, ani řádky obsahující pouze komentář, ani úvodní řádek)
+      --comments vypíše do statistik počet řádků, na kterých se vyskytoval
+      komentář
+      --labels vypíše do statistik počet definovaných návěští
+      --jumps vypíše do statistik počet instrukcí pro podmíněné a nepodmíněné skoky dohromady
+      python3.6 interpret.py --help
+```
+
+```
 usage: python3.6 interpret.py [--help] [--source SOURCE] [--input INPUT]
                               [--stats STATS] [--insts] [--vars]
 
