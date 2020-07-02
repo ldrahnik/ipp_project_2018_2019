@@ -1460,16 +1460,21 @@ class interpret:
     # Funkce slouží na parsování argumentů z příkazové řádky
     #
     def parseCmdArgs(self):
-        parser = argparse.ArgumentParser(prog='python3.6 interpret.py', add_help=False, description='Interpret XML reprezentace kódu. Pro správnou funkčnost je nutná verze Python3.6.')
-        parser.add_argument('--help', dest='help', action='store_true', default=False, help='nápověda')
-        parser.add_argument('--source', dest='source', default=None)
-        parser.add_argument('--input', dest='input', default=None)
-        parser.add_argument('--stats', dest='stats', default=None)
-        parser.add_argument('--insts', dest='insts', action='store_true', default=None)
-        parser.add_argument('--vars', dest='vars', action='store_true', default=None)
+        argparser = argparse.ArgumentParser(prog='python3.6 interpret.py', add_help=False, description='Interpret XML reprezentace kódu ' + self.language + '. Pro správnou funkčnost je nutná verze Python3.6.')
+        argparser.add_argument('--help', dest='help', action='store_true', default=False, help='Nápověda.')
+        argparser.add_argument('--source', dest='source', default=None, help='Vstupní soubor s XML reprezentací zdrojového kódu dle definice ze sekce.')
+        argparser.add_argument('--input', dest='input', default=None, help='Soubor se vstupy pro samotnou interpretaci zadaného zdrojového kódu.')
+        argparser.add_argument('--stats', dest='stats', default=None, help='Sbírání statistik interpretace kódu. Podpora parametru --insts pro výpis počtu vykonaných instrukcí během interpretace do statistik.Podpora parametru --vars pro výpis maximálního počtu inicializovaných proměnných přítomných ve všech platných rámcích během interpretace zadaného programu do statistik.')
+        argparser.add_argument('--insts', dest='insts', action='store_true', default=None)
+        argparser.add_argument('--vars', dest='vars', action='store_true', default=None)
 
         # parsování argumentů
-        result = parser.parse_args()
+        result = argparser.parse_args()
+
+        # --help
+        if result.help == True:
+            argparser.print_help()
+            sys.exit(0)
 
         # validování argumentů
         self.validateCmdArgs(result)
@@ -1479,11 +1484,6 @@ class interpret:
             for arg in sys.argv:
                 if(arg == '--insts' or arg == '--vars'):
                     self.stats[arg] = 0
-
-        # --help
-        if result.help == True:
-            parser.print_help()
-            sys.exit(0)
 
         return result
 
