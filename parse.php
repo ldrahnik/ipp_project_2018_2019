@@ -158,23 +158,40 @@ class Parser {
       $nil = true;
     }
 
-    /*
-     * U literálů typu string při zápisu do XML nepřevádějte původní escape sekvence, ale
-     * pouze pro problematické znaky v XML (např. <, >, &) využijte odpovídající XML entity (např.
-     * &lt;, &gt;, &amp;).
-     */
-    if($string) {
-      $search = array('&lt;', '&gt;', '&amp;');
-      $replace = array('<', '>', '&');
-
-      $name = str_replace($search, $replace, $name);
-    }
-
     if($string || $int || $bool || $nil) {
       return true;
     }
 
     return false;
+  }
+
+  /*
+   * U literálů typu string při zápisu do XML nepřevádějte původní escape sekvence, ale
+   * pouze pro problematické znaky v XML (např. <, >, &) využijte odpovídající XML entity (např.
+   * &lt;, &gt;, &amp;).Podobně převádějte problematické znaky vyskytující se v identifikátorech proměnných.
+   *
+   * XMLWritter převádí uvedené speciální znaky automaticky ve funkci text() až na výjimku &apos. Proto je níže při zápisu použitá funkce textRaw(), aby nedošlo k opětovnému nahrazení &.
+   *
+   * Vstup funkce: WRITE string@\032<not-tag/>\032'.." # řetězec převádíme, aby byl správně uložen do XML elementu
+   * Výstup funkce: <arg1 type="string">\032&lt;not-tag/&gt;\032&apos;..&quot;</arg1>
+   */
+  function replaceSelectedSpecialCharacters($string) {
+    $patterns = array('/&(?!amp;)/', '/</', '/>/', "/'/", '/"/');
+    $replacements = array('&amp;', '&lt;', '&gt;', '&apos;', '&quot;');
+
+    $result = preg_replace($patterns, $replacements, $string);
+
+    return $result;
+  }
+
+  function getConstantValue($type, $value) {
+    if ($type == 'string')
+      return $this->replaceSelectedSpecialCharacters($value);
+    return $value;
+  }
+
+  function getVarName($name) {
+    return $this->replaceSelectedSpecialCharacters($name);
   }
 
   /**
@@ -215,7 +232,7 @@ class Parser {
    * Funkce slouží pro rozpoznání zda jde o konstantu nebo proměnnou. V případě proměnné vrací $name a v případě konstanty Value za zavináčem. Type@Value.
    */
   function getSymbValue($name) {
-    return $this->getSymbType($name) == 'var' ? $name : explode("@", $name)[1];
+    return $this->getSymbType($name) == 'var' ? $name : $this->getConstantValue(explode("@", $name)[0], explode("@", $name)[1]);
   }
 
   /**
@@ -294,7 +311,7 @@ class Parser {
               'args' => array(
                 '1' => array(
                   'type' => 'var',
-                  'value' => $exploded[1]
+                  'value' => $this->getVarName($exploded[1])
                 ),
                 '2' => array(
                   'type' => $this->getSymbType($exploded[2]),
@@ -328,7 +345,7 @@ class Parser {
               'args' => array(
                 '1' => array(
                   'type' => 'var',
-                  'value' => $exploded[1]
+                  'value' => $this->getVarName($exploded[1])
                 )
               )
             );
@@ -402,7 +419,7 @@ class Parser {
               'args' => array(
                 '1' => array(
                   'type' => 'var',
-                  'value' => $exploded[1]
+                  'value' => $this->getVarName($exploded[1])
                 ),
                 '2' => array(
                   'type' => $this->getSymbType($exploded[2]),
@@ -430,7 +447,7 @@ class Parser {
               'args' => array(
                 '1' => array(
                   'type' => 'var',
-                  'value' => $exploded[1]
+                  'value' => $this->getVarName($exploded[1])
                 ),
                 '2' => array(
                   'type' => 'type',
@@ -455,7 +472,7 @@ class Parser {
               'args' => array(
                 '1' => array(
                   'type' => 'var',
-                  'value' => $exploded[1]
+                  'value' => $this->getVarName($exploded[1])
                 ),
                 '2' => array(
                   'type' => $this->getSymbType($exploded[2]),
@@ -589,7 +606,7 @@ class Parser {
     $xml = new XMLWriter();
 
     $xml->openMemory();
-    $xml->setIndent(true);  
+    $xml->setIndent(true);
     $xml->startDocument($this->xmlVersion, $this->xmlEncoding);
     $xml->startElement($this->xmlRootName);
     $xml->writeAttribute('language', $this->language);
@@ -603,7 +620,7 @@ class Parser {
         foreach($instruction['args'] as $order => $arg) {
           $xml->startElement('arg' . $order);
           $xml->writeAttribute('type', $arg['type']);
-          $xml->text($arg['value']);
+          $xml->writeRaw($arg['value']);
           $xml->endElement();
         }
       }
