@@ -11,10 +11,17 @@ all: tex tar
 tar:
 	tar -cvzf $(LOGIN).tgz $(FILES)
 
+untar:
+	rm -rf $(LOGIN) && mkdir -p $(LOGIN) && tar -C $(LOGIN) -xvzf $(LOGIN).tgz
+
 rmtar:
 	rm -f $(LOGIN).tgz
+
+tree:
+	tree -a $(LOGIN)
 
 ############################################
 
 tex:
 	cd doc && make && make readme1.ps && make readme1.pdf
+
