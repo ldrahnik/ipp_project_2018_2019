@@ -28,6 +28,13 @@ class interpret:
     instructionOrder = 1
 
     #
+    # Datový zásobník. Operační kód zásobníkových instrukcí je zakončen písmenem „S“.
+    # Zásobníkové instrukce případně načítají chybějící operandy z datového zásobníku a
+    # výslednou hodnotu operace případně ukládají zpět na datový zásobník.
+    #
+    dataStack = []
+
+    #
     # Konstruktor volá funkci na parsování argumentů
     # Konstruktor volá funkci run na samotnou intepretaci
     #
@@ -202,7 +209,7 @@ class interpret:
     #
     # Funkce slouží pro kontrolu názvu konstanty předané parametrem arg
     #
-    def isValidConstant(self, arg):
+    def isValidConst(self, arg):
         bool = False
         if(arg.get("type") == "bool" and re.match('^(true|false)$', arg.text) != None):
             bool = True
@@ -236,7 +243,7 @@ class interpret:
     # Funkce slouží pro kontrolu názvu symbolu předané parametrem arg, symbol se může skládat buď z proměnné nebo konstanty
     #
     def isValidSymb(self, arg):
-        return self.isValidVar(arg) or self.isValidConstant(arg)
+        return self.isValidVar(arg) or self.isValidConst(arg)
 
     #
     # Instruction DEFVAR
@@ -1243,7 +1250,8 @@ class interpret:
                 self.error('Symbol není int', 53)
             position = int(args[1].text)
         else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "int"):
+            if((self.GF.get(self.getSymbValue(args[1])).get("type") != "int") and
+                (self.GF.get(self.getSymbValue(args[1])).get("type")) is not None):
                 self.error('Symbol není int', 53)
             position = int(self.GF.get(self.getSymbValue(args[1])).get("value"))
 
@@ -1258,7 +1266,8 @@ class interpret:
                 # Není-li symb validní ordinální hodnota znaku v Unicode dojde k chybě 58.
                 self.error('Není validní ordinální hodnota znaku v Unicode', 58)
         else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "int"):
+            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "int" and
+              (self.GF.get(self.getSymbValue(args[1])).get("type")) is not None):
                 self.error('Symbol není int', 53)
 
             try:
@@ -1351,12 +1360,82 @@ class interpret:
         self.GF[self.getSymbValue(args[0])] = {"value": value, "type": type}
 
     #
+    # Funkce vrací hodnotu pro proměnnou.
+    # 
+    # Vstup: GF@název
+    def getVarValue(self, var):
+        if(self.getSymbType(var) == 'GF'):
+            if(self.getSymbValue(var) not in self.GF):
+                self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
+            return self.GF[self.getSymbValue(var)]
+        # TODO: TF, LF
+
+    #
+    # Funkce vrací hodnotu pro konstantu.
+    #
+    # Vstup: <arg1 type="string">světe</arg1>
+    def getConstValue(self, const):
+        return const.text
+
+    #
+    # Funkce vrátí hodnotu pro symbol.
+    #
+    # Vstup: <arg1 type="var">GF@val</arg1>
+    #        <arg1 type="string">světe</arg1>
+    #
+    def getSymbValue2(self, symb):
+
+        # symbol je proměnná
+        if(self.isValidVar(symb)):
+          return self.getVarValue(symb.text)
+
+        # symbol je konstanta
+        elif(self.isValidConst(symb)):
+          return self.getConstValue(symb)
+
+    #
+    # Instruction PUSHS
+    #
+    def pushsIns(self, args):
+        if(len(args) != 1):
+            self.error('U instrukce PUSHS musí být počet argumentů roven 1', 52)
+        if(self.isValidSymb(args[0]) == False):
+            self.error('Symbol není validní', 53)
+
+        # přidání hodnoty na vrchol zásobníku
+        self.dataStack.append(self.getSymbValue2(args[0]))
+
+    #
+    # Instruction POPS
+    #
+    def popsIns(self, args):
+        if(len(args) != 1):
+            self.error('U instrukce PUSHS musí být počet argumentů roven 1', 52)
+        if(self.isValidVar(args[0]) == False):
+            self.error('Proměnná není validní', 53)
+
+        # vytáhnutí hodnoty z vrcholu zásobníku
+        # zásobník nesmí být prázdný
+        try:
+            value = self.dataStack.pop()
+        except (IndexError):
+            self.error('Datový zásobník je prázdný', 56)
+
+        # nastavení hodnoty do proměnné
+        # TODO: TF, LF
+        self.GF[self.getSymbValue(args[0])] = {"value": value, "type": self.GF[self.getSymbValue(args[0])]['type']}
+
+    #
     # Funkce obstarává zavolání pro každou instrukci zvlášť, opcode v xml buď odpovídá některé z povolených instrukcí nebo funkce skončí chybou.
     # Parametry: opcode a argumenty(args) pro danou instrukci.
     #
     def executeInstruction(self, opcode, args):
         upperOpCode = opcode.upper()
 
+        #'CREATEFRAME':
+        #'PUSHFRAME':
+        #'RETURN':
+        #'CALL':
         if(upperOpCode == 'MOVE'):
             self.moveIns(args)
         elif(upperOpCode == 'INT2CHAR'):
@@ -1365,22 +1444,18 @@ class interpret:
             self.int2floatIns(args)
         elif(upperOpCode == 'FLOAT2INT'):
             self.float2intIns(args)
-            #'CREATEFRAME':
-            #'PUSHFRAME':
-            #'RETURN':
         elif(upperOpCode == 'BREAK'):
             self.breakIns(args)
-
-            #'POPS':
+        elif(upperOpCode == 'POPS'):
+            self.popsIns(args)
+        elif(upperOpCode == 'PUSHS'):
+            self.pushsIns(args)
         elif(upperOpCode == 'DEFVAR'):
             self.defVarIns(args)
-            #'CALL':
-            #'PUSHS':
         elif(upperOpCode == 'WRITE'):
             self.writeIns(args)
         elif(upperOpCode == 'DPRINT'):
             self.dprintIns(args)
-
         elif(upperOpCode == 'ADD'):
             self.addIns(args)
         elif(upperOpCode == 'SUB'):
@@ -1409,15 +1484,12 @@ class interpret:
             self.getcharIns(args)
         elif(upperOpCode == 'SETCHAR'):
             self.setcharIns(args)
-
         elif(upperOpCode == 'READ'):
             self.readIns(args)
-
         elif(upperOpCode == 'STRLEN'):
             self.strlenIns(args)
         elif(upperOpCode == 'TYPE'):
             self.typeIns(args)
-
         elif(upperOpCode == 'LABEL'):
             self.labelIns(args)
         elif(upperOpCode == 'JUMP'):
