@@ -68,6 +68,23 @@ parametr se nesmí kombinovat s parametrem --int-script)
 (tento parametr se nesmí kombinovat s parametrem --parse-script)
 ```
 
+## Testování programu:
+
+```
+make test
+# pustí projekt s dodanými testy a výstupy uloží do složky
+cd ./tests/ && bash _stud_tests.sh  /home/ldrahnik/projects/ipp_project_2018_2019 /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/interpret-only/log/
+# provede porovnání výstupu testů
+cd ./tests/ && bash _stud_tests_diff.sh  /home/ldrahnik/projects/ipp_project_2018_2019/jexamxml.jar /home/ldrahnik/projects/ipp_project_2018_2019/cls-supplementary-tests/jexamxml_tmp /home/ldrahnik/projects/ipp_project_2018_2019/cls-supplementary-tests/options /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/
+*******TEST read_test PASSED
+*******TEST simple_tag PASSED
+*******TEST write_test PASSED
+# úklid
+rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/cls-supplementary-tests/jexamxml_tmp
+rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/*
+rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/interpret-only/log/*
+```
+
 ## Odevzdané soubory:
 
 ```
