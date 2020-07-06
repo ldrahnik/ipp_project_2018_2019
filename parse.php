@@ -435,7 +435,7 @@ class Parser {
           );
           break;
         case Parser::INS_ARG_LABEL:
-          if(!$this->isCorrectSymbName($arg)) {
+          if(!$this->isCorrectLabelName($arg)) {
             return 23;
           }
           $argsXml[$argsCounter++] = array(
