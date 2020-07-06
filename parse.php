@@ -362,7 +362,7 @@ class Parser {
             }
             break;
           case "READ":
-            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR))) != 0) {
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_TYPE))) != 0) {
                 return $ecode;
             }
             break;
