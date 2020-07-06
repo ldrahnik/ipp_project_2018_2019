@@ -421,7 +421,7 @@ class Parser {
             return 23;
           }
           $argsXml[$argsCounter++] = array(
-            'type' => 'var',
+            'type' => Parser::INS_ARG_VAR,
             'value' => $this->getVarName($args[0])
           );
           break;
@@ -439,7 +439,7 @@ class Parser {
             return 23;
           }
           $argsXml[$argsCounter++] = array(
-            'type' => 'label',
+            'type' => Parser::INS_ARG_LABEL,
             'value' => $arg
           );
           break;
@@ -448,7 +448,7 @@ class Parser {
             return 23;
           }
           $argsXml[$argsCounter++] = array(
-            'type' => 'type',
+            'type' => Parser::INS_ARG_TYPE,
             'value' => $arg
           );
           break;
