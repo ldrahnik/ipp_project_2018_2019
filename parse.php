@@ -420,7 +420,7 @@ class Parser {
           if(!$this->isCorrectVarName($arg)) {
             return 23;
           }
-          $argsXml[$argsCounter++] = array(
+          $argsXml[++$argsCounter] = array(
             'type' => Parser::INS_ARG_VAR,
             'value' => $this->getVarName($args[0])
           );
@@ -429,7 +429,7 @@ class Parser {
           if(!$this->isCorrectSymbName($arg)) {
             return 23;
           }
-          $argsXml[$argsCounter++] = array(
+          $argsXml[++$argsCounter] = array(
             'type' => $this->getSymbType($arg),
             'value' => $this->getSymbValue($arg)
           );
@@ -438,7 +438,7 @@ class Parser {
           if(!$this->isCorrectLabelName($arg)) {
             return 23;
           }
-          $argsXml[$argsCounter++] = array(
+          $argsXml[++$argsCounter] = array(
             'type' => Parser::INS_ARG_LABEL,
             'value' => $arg
           );
@@ -447,7 +447,7 @@ class Parser {
           if(!$this->isCorrectTypeName($arg)) {
             return 23;
           }
-          $argsXml[$argsCounter++] = array(
+          $argsXml[++$argsCounter] = array(
             'type' => Parser::INS_ARG_TYPE,
             'value' => $arg
           );
