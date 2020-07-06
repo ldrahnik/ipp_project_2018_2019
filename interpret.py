@@ -11,21 +11,69 @@ import re
 class interpret:
 
 
-    language = 'IPPcode19';
+    language = 'IPPcode19'
 
+    #
+    # Globální rámec, značíme GF (Global Frame), který je na začátku interpretace automaticky inicializován
+    # jako prázdný; slouží pro ukládání globálních proměnných.
+    #
     GF = {}
-    LF = None
+    FRAME_GLOBAL = 'GF'
+
+    #
+    # Lokální rámec, značíme LF (Local Frame), který je na začátku nedefinován a odkazuje na vrcholový/aktuální 
+    # rámec na zásobníku rámců; slouží pro ukládání lokálních proměnných funkcí (zásobník
+    # rámců lze s výhodou využít při zanořeném či rekurzivním volání funkcí);
+    #
+    LFStack = []
+    FRAME_LOCAL = 'LF'
+
+    #
+    # Dočasný rámec, značíme TF (Temporary Frame), který slouží pro chystání nového nebo úklid starého
+    # rámce (např. při volání nebo dokončování funkce), jenž může být přesunut na zásobník rámců
+    # a stát se aktuálním lokálním rámcem. Na začátku interpretace je dočasný rámec nedefinovaný.
+    #
     TF = None
+    FRAME_TEMPORARY = 'TF'
+
+    #
+    # Datové typy
+    #
+    TYPE_BOOLEAN = 'bool'
+    TYPE_BOOLEAN_TRUE = 'true'
+    TYPE_BOOLEAN_FALSE = 'false'
+    TYPE_INTEGER = 'int'
+    TYPE_STRING = 'string'
+    TYPE_NIL = 'nil' # TODO: chybí při kontrole isTypeValid
+    TYPE_FLOAT = 'float'
+
+    #
+    # Argumenty funkce
+    #
+    TYPE_VAR = 'var'
+    TYPE_LABEL = 'label'
+    TYPE_SYMB = 'symb'
+    TYPE_TYPE = 'type'
+    UNSPEC_TYPE = 'unspec_type'
+
 
     jumpTo = None
-
     inputFile = None
-
     labels = {}
-
-    stats = {}
-
     instructionOrder = 1
+
+
+    #
+    # Parametry pro sbírání statistik interpretace kódu. (může být --insts a --vars)
+    #
+    statsParameters = {}
+
+    #
+    # Datový zásobník. Operační kód zásobníkových instrukcí je zakončen písmenem „S“.
+    # Zásobníkové instrukce případně načítají chybějící operandy z datového zásobníku a
+    # výslednou hodnotu operace případně ukládají zpět na datový zásobník.
+    #
+    dataStack = []
 
     #
     # Datový zásobník. Operační kód zásobníkových instrukcí je zakončen písmenem „S“.
@@ -45,8 +93,6 @@ class interpret:
 
         # interpretace
         self.run(opts)
-
-        return
 
     #
     # Funkce se volá hned po zavolání konstruktoru.
@@ -135,8 +181,8 @@ class interpret:
             try:
                 f = open(opts.stats, "w")
                 f.truncate()
-                for info in self.stats:
-                    f.write(str(self.stats[info]) + "\n")
+                for info in self.statsParameters:
+                    f.write(str(self.statsParameters[info]) + "\n")
                 f.close()
             except:
                 self.error('Nepodařilo se otevřít soubor pro zápis statistik: ' + opts.stats,12)
@@ -151,22 +197,10 @@ class interpret:
         sys.exit(0)
 
     #
-    # Funkce slouží pro rozdělení symbolu podle zavináče a vrací Value. Type@Value
-    #
-    def getSymbValue(self, arg):
-        return arg.text.split("@")[1]
-
-    #
-    # Funkce slouží pro rozdělení symbolu podle zavináče a vrací Type. Type@Value
-    #
-    def getSymbType(self, arg):
-        return arg.text.split("@")[0]
-
-    #
     # Funkce slouží pro validování názvu pro návěští.
     #
     def isValidLabelName(self, arg):
-        if(arg.get("type") != 'label'):
+        if(arg.get("type") != self.TYPE_LABEL):
             return False
         if(re.match('[a-zA-Z0-9_\-$&%*]+$', arg.text) == None):
             return False
@@ -180,15 +214,8 @@ class interpret:
             return False
         return True
 
-    #
-    # Funkce slouží pro validování zda jde převést zápis na float či nikoliv.
-    #
-    def isfloat(self, value):
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
+    def getLabelValue(self, arg):
+        return arg.text
 
     #
     # Funkce slouží pro kontrolu názvu proměnné předané v arg
@@ -199,326 +226,219 @@ class interpret:
     # speciálním znakem, kde speciální znaky jsou: , -, $, &, %, *). Např. GF@ x značí proměnnou x
     # uloženou v globálním rámci.
     #
-    def isValidVar(self, arg):
-        if(arg.get("type") != 'var'):
+    def isValidVariable(self, object):
+        if(object.get("type") != self.TYPE_VAR):
             return False
-        if(re.match('^(LF|TF|GF){1}@[a-zA-Z_\-$&%*]{1}[a-zA-Z0-9_\-$&%*]*$', arg.text) == None):
+        if(re.match('^(' + self.FRAME_LOCAL + '|' + self.FRAME_TEMPORARY + '|' + self.FRAME_GLOBAL + '){1}@[a-zA-Z_\-$&%*]{1}[a-zA-Z0-9_\-$&%*]*$', object.text) == None):
             return False
         return True
 
-    #
-    # Funkce slouží pro kontrolu názvu konstanty předané parametrem arg
-    #
-    def isValidConst(self, arg):
-        bool = False
-        if(arg.get("type") == "bool" and re.match('^(true|false)$', arg.text) != None):
-            bool = True
-        int = False
-        if(arg.get("type") == "int" and re.match('^[-]?[0-9]*$', arg.text) != None):
-            int = True
-        string = False
-        # speciální výjimka pro prázdný strig
-        if(arg.get("type") == "string" and (not arg.text or re.match('^.*$', arg.text) != None)):
-            string = True
-        floattype = False
-        if(arg.get("type") == "float" and self.isfloat(arg.text) == True):
-            floattype = True
+    def isValidBoolean(self, object):
+        if(object.get("type") != self.TYPE_BOOLEAN):
+            return False
+        if(re.match('^(' + self.TYPE_BOOLEAN_TRUE + '|' + self.TYPE_BOOLEAN_FALSE + ')$', object.text) != None):
+            return True
+        return False
 
-        if(string == True or int == True or bool == True or floattype == True):
-            return True;
+    def isValidInteger(self, object):
+        if(object.get("type") != self.TYPE_INTEGER):
+            return False
+        if(re.match('^[-]?[0-9]*$', object.text) != None):
+            return True
+        return False
+
+    def isValidString(self, object):
+        if(object.get("type") != self.TYPE_STRING):
+            return False
+        # Speciální výjimka pro prázdný strig.
+        if(not object.text or re.match('^.*$', object.text) != None):
+            return True
+        return False
+
+    def isValidFloat(self, object):
+        if(object.get("type") != self.TYPE_FLOAT):
+            return False
+        try:
+            float(object.text)
+            return True
+        except ValueError:
+            return False
+
+    #
+    # Funkce slouží pro kontrolu hodnoty konstanty předané parametrem arg dle jejího typu
+    #
+    def isValidConstant(self, object):
+
+        # bool
+        if(object.get("type") == self.TYPE_BOOLEAN and self.isValidBoolean(object)):
+            return True
+
+        # integer
+        elif(object.get("type") == self.TYPE_INTEGER and self.isValidInteger(object)):
+            return True
+
+        # string 
+        elif(object.get("type") == self.TYPE_STRING and self.isValidString(object)):
+            return True
+
+        # float
+        elif(object.get("type") == self.TYPE_FLOAT and self.isValidFloat(object)):
+            return True
 
         return False
 
-    #
-    # Funkce kontroluje, zda je zadaný type symbolu správný, jestliže platí Type ∈ {int, string, bool, float} vrací true, pakliže ne, false.
-    #
-    def isValidType(self, arg):
-        if(arg.get("type") != 'type'):
-            return False
-        if(re.match('^(string|int|bool|float){1}$', arg.text) == None):
-            return False
-        return True
+    def isValidType(self, object):
+        if(re.match('^(' + self.TYPE_STRING + '|' + self.TYPE_INTEGER + '|' + self.TYPE_BOOLEAN + '|' + self.TYPE_FLOAT + '){1}$', object.text) != None):
+            return True
+        return False
 
     #
-    # Funkce slouží pro kontrolu názvu symbolu předané parametrem arg, symbol se může skládat buď z proměnné nebo konstanty
+    # Funkce slouží pro kontrolu symbolu předaného parametrem arg, symbol se může skládat buď z proměnné nebo konstanty
     #
-    def isValidSymb(self, arg):
-        return self.isValidVar(arg) or self.isValidConst(arg)
-
-    #
-    # Instruction DEFVAR
-    #
-    def defVarIns(self, args):
-        if(len(args) != 1):
-            self.error('U instrukce DEFVAR musí být počet argumentů roven 1', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable není povolená nebo musí mít type var', 53)
-        if(self.getSymbType(args[0]) == 'GF'):
-            self.GF[self.getSymbValue(args[0])] = {"value": None, "type": None};
-
-        # if(self.getSymbType(args[0]) == 'LF'): TODO:
-        #    self.LF[self.getSymbValue(args[0])];
-        # if(self.getSymbType(args[0]) == 'TF'):
-        #    self.TF[self.getSymbValue(args[0])];
+    def isValidSymbol(self, object):
+        return self.isValidVariable(object) or self.isValidConstant(object)
 
     #
     # Instruction WRITE
     #
-    def writeIns(self, args):
-        if(len(args) != 1):
-            self.error('U instrukce WRITE musí být počet argumentů roven 1', 52)
-        if(self.isValidSymb(args[0]) == False):
-            self.error('Symbol není validní', 53)
+    def writeIns(self, opCode, args):
 
-        if(self.isValidVar(args[0]) == False):
-            if(self.getSymbType(args[0]) == 'bool'):
-                print(args[0].text, end="") # TODO: bool
-            else:
-                print(args[0].text, end="")
-        else:
-            if(self.getSymbType(args[0]) == 'GF'):
-                if(self.getSymbValue(args[0]) not in self.GF):
-                    self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-                if(self.GF.get(self.getSymbValue(args[0])).get("type") == "bool"):
-                    print(self.GF.get(self.getSymbValue(args[0])).get("value"), end="") # TODO: bool
-                else:
-                    print(self.GF.get(self.getSymbValue(args[0])).get("value"), end="")
-            else:
-                print(self.getSymbType(args[0]), end="")
-            # TODO: LF, TF
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_SYMB])
 
+        # získání hodnoty
+        value = self.getSymbolValue(args[0])
+
+        # tisknutí
+        print(value, end="")
 
     #
     # Instruction EXIT
     #
-    def exitIns(self, args):
-        if(len(args) != 1):
-            self.error('U instrukce EXIT musí být počet argumentů roven 1', 52)
-        if(self.isValidSymb(args[0]) == False):
-            self.error('Symbol není validní', 53)
+    def exitIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_SYMB], [self.TYPE_INTEGER])
 
         try:
-            exitValue = int(args[0].text)
-            if(exitValue < 0 or exitValue > 49):
+            value = int(self.getSymbolValue(args[0])) # TODO: int konverze je zbytečná?
+            if value < 0 or value > 49:
                 raise ValueError
-            sys.exit(exitValue)
+            sys.exit(value)
         except ValueError:
             self.error('Symbol není celé číslo v intervalu 0 až 49 (včetně)', 57)
 
     #
     # Instruction BREAK
     #
-    def breakIns(self, args):
+    def breakIns(self, opCode, args):  # TODO:
         print('Global Frame: ' + str(self.GF), file=sys.stderr)
         print('Local Frame: ' + str(self.LF), file=sys.stderr)
         print('Temporary Frame: ' + str(self.TF), file=sys.stderr)
-        if((self.stats.get('--insts', None) != None)):
-            print('Provedené instrukce: ' + str(self.stats['--insts']), file=sys.stderr)
-        if((self.stats.get('--vars', None) != None)):
-            print('Maximální počet inicializovaných proměnných ve všech rámcích: ' + str(self.stats['--vars']), file=sys.stderr)
-
-    #
-    # Instruction MOVE
-    #
-    def moveIns(self, args):
-        if(len(args) != 2):
-            self.error('U instrukce MOVE musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.getSymbType(args[0]) == 'GF'):
-            if(self.getSymbValue(args[0]) not in self.GF):
-                self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-            value = ""
-            if(args[1].text):
-                value = args[1].text
-            self.GF[self.getSymbValue(args[0])] = {"value": value, "type": args[1].get("type")}
-        # TODO: LF, TF
+        if((self.statsParameters.get('--insts', None) != None)):
+            print('Provedené instrukce: ' + str(self.statsParameters['--insts']), file=sys.stderr)
+        if((self.statsParameters.get('--vars', None) != None)):
+            print('Maximální počet inicializovaných proměnných ve všech rámcích: ' + str(self.statsParameters['--vars']), file=sys.stderr)
 
     #
     # Instruction ADD
     #
-    def addIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce ADD musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.getSymbValue(args[0]) not in self.GF or
-          (self.GF.get(self.getSymbValue(args[0])).get('type') != 'int' and
-          self.GF.get(self.getSymbValue(args[0])).get('type') != None)): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
+    def addIns(self, opCode, args):
 
-        # value1
-        value1 = 0
-        if(self.isValidVar(args[1]) == True):
-            if(self.GF.get(self.getSymbValue(args[1])).get('type') != 'int'):
-                 self.error('Symbol není validní', 53)
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            if(args[1].get("type") != 'int'):
-                self.error('Symbol není validní', 53)
-            value1 = args[1].text
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_INTEGER, self.TYPE_INTEGER])
 
-        # value2
-        value2 = 0
-        if(self.isValidVar(args[2]) == True):
-            if(self.GF.get(self.getSymbValue(args[2])).get('type') != 'int'):
-                 self.error('Symbol není validní', 53)
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            if(args[2].get("type") != 'int'):
-                self.error('Symbol není validní', 53)
-            value2 = args[2].text
+        # získání hodnot
+        value1 = self.getSymbolValue(args[1])
+        value2 = self.getSymbolValue(args[2])
 
-        # spočítání a uložení výsledku
-        result = int(value1) + int(value2)
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "int"}
+        # spočítání
+        result = value1 + value2
+
+        # uložení
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_INTEGER
+        )
 
     #
     # Instruction MUL
     #
-    def mulIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce MUL musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.getSymbValue(args[0]) not in self.GF or
-          (self.GF.get(self.getSymbValue(args[0])).get('type') != 'int' and
-          self.GF.get(self.getSymbValue(args[0])).get('type') != None)): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
+    def mulIns(self, opCode, args):
 
-        # value1
-        value1 = 0
-        if(self.isValidVar(args[1]) == True):
-            if(self.GF.get(self.getSymbValue(args[1])).get('type') != 'int'):
-                 self.error('Symbol není validní', 53)
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            if(args[1].get("type") != 'int'):
-                self.error('Symbol není validní', 53)
-            value1 = args[1].text
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_INTEGER, self.TYPE_INTEGER])
 
-        # value2
-        value2 = 0
-        if(self.isValidVar(args[2]) == True):
-            if(self.GF.get(self.getSymbValue(args[2])).get('type') != 'int'):
-                 self.error('Symbol není validní', 53)
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            if(args[2].get("type") != 'int'):
-                self.error('Symbol není validní', 53)
-            value2 = args[2].text
+        # získání hodnot
+        value1 = self.getSymbolValue(args[1])
+        value2 = self.getSymbolValue(args[2])
 
-        # spočítání a uložení výsledku
-        result = int(value1) * int(value2)
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "int"}
+        # spočítání
+        result = value1 * value2
+
+        # uložení
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_INTEGER
+        )
 
     #
     # Instruction IDIV
     #
-    def idivIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce IDIV musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.getSymbValue(args[0]) not in self.GF or
-          (self.GF.get(self.getSymbValue(args[0])).get('type') != 'int' and
-          self.GF.get(self.getSymbValue(args[0])).get('type') != None)): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
+    def idivIns(self, opCode, args):
 
-        # value1
-        value1 = 0
-        if(self.isValidVar(args[1]) == True):
-            if(self.GF.get(self.getSymbValue(args[1])).get('type') != 'int'):
-                 self.error('Symbol není validní', 53)
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            if(args[1].get("type") != 'int'):
-                self.error('Symbol není validní', 53)
-            value1 = args[1].text
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_INTEGER, self.TYPE_INTEGER])
 
-        if(int(value1) == 0):
-            self.error('Nelze dělit nulou', 58)
+        # získání hodnot
+        value1 = self.getSymbolValue(args[1])
+        value2 = self.getSymbolValue(args[2])
 
-        # value2
-        value2 = 0
-        if(self.isValidVar(args[2]) == True):
-            if(self.GF.get(self.getSymbValue(args[2])).get('type') != 'int'):
-                 self.error('Symbol není validní', 53)
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            if(args[2].get("type") != 'int'):
-                self.error('Symbol není validní', 53)
-            value2 = args[2].text
+        # spočítání
+        result = value1 / value2
 
-        # spočítání a uložení výsledku
-        result = int(int(value2) / int(value1))
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "int"}
+        # uložení
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_INTEGER
+        )
 
     #
     # Instruction SUB
     #
-    def subIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce SUB musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.getSymbValue(args[0]) not in self.GF or
-          (self.GF.get(self.getSymbValue(args[0])).get('type') != 'int' and
-          self.GF.get(self.getSymbValue(args[0])).get('type') != None)): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
+    def subIns(self, opCode, args):
 
-        # value1
-        value1 = 0
-        if(self.isValidVar(args[1]) == True):
-            if(self.GF.get(self.getSymbValue(args[1])).get('type') != 'int'):
-                 self.error('Symbol není validní', 53)
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            if(args[1].get("type") != 'int'):
-                self.error('Symbol není validní', 53)
-            value1 = args[1].text
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_INTEGER, self.TYPE_INTEGER])
 
-        # value2
-        value2 = 0
-        if(self.isValidVar(args[2]) == True):
-            if(self.GF.get(self.getSymbValue(args[2])).get('type') != 'int'):
-                 self.error('Symbol není validní', 53)
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            if(args[2].get("type") != 'int'):
-                self.error('Symbol není validní', 53)
-            value2 = args[2].text
+        # získání hodnot
+        value1 = self.getSymbolValue(args[1])
+        value2 = self.getSymbolValue(args[2])
 
-        # spočítání a uložení výsledku
-        result = int(value1) - int(value2)
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "int"}
+        # spočítání
+        result = value1 - value2
+
+        # uložení
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_INTEGER
+        )
 
     #
     # Instruction DPRINT
     #
-    def dprintIns(self, args):
-        if(len(args) != 1):
-            self.error('U instrukce DPRINT musí být počet argumentů roven 1', 52)
-        if(self.isValidSymb(args[0]) == False):
-            self.error('Symbol není validní', 53)
+    def dprintIns(self, opCode, args): # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_SYMB])
 
         if(self.isValidVar(args[0]) == False):
             if(self.getSymbType(args[0]) == 'bool'):
@@ -540,20 +460,10 @@ class interpret:
     #
     # Instruction AND
     #
-    def andIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce AND musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "bool" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není bool', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def andIns(self, opCode, args): # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB])
 
         # value1
         value1 = None
@@ -588,20 +498,10 @@ class interpret:
     #
     # Instruction OR
     #
-    def orIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce OR musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "bool" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není bool', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def orIns(self, opCode, args): # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB])
 
         # value1
         value1 = None
@@ -636,42 +536,30 @@ class interpret:
     #
     # Instruction LABEL
     #
-    def labelIns(self, args):
-        if(len(args) != 1):
-            self.error('U instrukce LABEL musí být počet argumentů roven 1', 52)
-        if(self.isValidLabelName(args[0]) == False):
-            self.error('Není validní label', 52)
-        if(self.isValidLabel(args[0]) == True):
-            self.error('Redefinice návěští není možná', 52)
+    def labelIns(self, opCode, args):
 
-        self.labels[args[0].text] = self.instructionOrder
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL])
+
+        self.labels[self.getLabelValue(args[0])] = self.instructionOrder
 
     #
     # Instruction JUMP
     #
-    def jumpIns(self, args):
-        if(len(args) != 1):
-            self.error('U instrukce JUMP musí být počet argumentů roven 1', 52)
-        if(self.isValidLabelName(args[0]) == False):
-            self.error('Není validní label', 52)
-        if(self.isValidLabel(args[0]) == False):
-            self.error('Návěští musí existovat', 52)
+    def jumpIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL])
+
         self.jumpTo = self.labels[args[0].text]
 
     #
     # Instruction JUMPIFEQ
     #
-    def jumpifeqIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce JUMPIFEQ musí být počet argumentů roven 3', 52)
-        if(self.isValidLabelName(args[0]) == False):
-            self.error('Není validní label', 52)
-        if(self.isValidLabel(args[0]) == False):
-            self.error('Návěští musí existovat', 52)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def jumpifeqIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL, self.TYPE_SYMB, self.TYPE_SYMB])
 
         # zjisti type1, value1
         type1 = None
@@ -704,17 +592,10 @@ class interpret:
     #
     # Instruction JUMPIFNEQ
     #
-    def jumpifneqIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce JUMPIFNEQ musí být počet argumentů roven 3', 52)
-        if(self.isValidLabelName(args[0]) == False):
-            self.error('Není validní label', 52)
-        if(self.isValidLabel(args[0]) == False):
-            self.error('Návěští musí existovat', 52)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def jumpifneqIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL, self.TYPE_VAR, self.TYPE_SYMB])
 
         # zjisti type1, value1
         type1 = None
@@ -747,20 +628,10 @@ class interpret:
     #
     # Instruction STRI2INT
     #
-    def stri2intIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce STRI2INT musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "int" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není int', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def stri2intIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
 
         # získání pozice
         position = 0
@@ -800,18 +671,10 @@ class interpret:
     #
     # Instruction FLOAT2INT
     #
-    def float2intIns(self, args):
-        if(len(args) != 2):
-            self.error('U instrukce FLOAT2INT musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "int" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není int', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
+    def float2intIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB])
 
         intvalue = 0
         if(self.isValidVar(args[1]) == False):
@@ -836,18 +699,10 @@ class interpret:
     #
     # Instruction NOT
     #
-    def notIns(self, args):
-        if(len(args) != 2):
-            self.error('U instrukce NOT musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "bool" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není bool', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
+    def notIns(self, opCode, args): # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR])
 
         # value
         value1 = None
@@ -871,15 +726,10 @@ class interpret:
     #
     # Instruction STRLEN
     #
-    def strlenIns(self, args):
-        if(len(args) != 2):
-            self.error('U instrukce STRLEN musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
+    def strlenIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR])
 
         # zjištění délky
         var_len = 0
@@ -904,20 +754,10 @@ class interpret:
     #
     # Instruction GETCHAR
     #
-    def getcharIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce GETCHAR musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "string" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není string', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def getcharIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
 
         # získání pozice
         position = 0
@@ -958,20 +798,10 @@ class interpret:
     #
     # Instruction LT
     #
-    def ltIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce LT musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "bool" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není bool', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def ltIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
 
         # zjisti type1, value1
         type1 = None
@@ -1009,20 +839,10 @@ class interpret:
     #
     # Instruction EQ
     #
-    def eqIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce LT musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable není povolená nebo musí mít type var, type uvedený', 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "bool" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není bool', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def eqIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
 
         # zjisti type1, value1
         type1 = None
@@ -1059,20 +879,10 @@ class interpret:
     #
     # Instruction GT
     #
-    def gtIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce LT musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "bool" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není bool', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def gtIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
 
         # zjisti type1, value1
         type1 = None
@@ -1108,20 +918,10 @@ class interpret:
     #
     # Instruction SETCHAR
     #
-    def setcharIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce SETCHAR musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "string" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není string', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def setcharIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
 
         # získání pozice
         position = 0
@@ -1157,15 +957,10 @@ class interpret:
     #
     # Instruction TYPE
     #
-    def typeIns(self, args):
-        if(len(args) != 2):
-            self.error('U instrukce TYPE musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
+    def typeIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
 
         # zjištění typu
         type = ""
@@ -1186,20 +981,10 @@ class interpret:
     #
     # Instruction CONCAT
     #
-    def concatIns(self, args):
-        if(len(args) != 3):
-            self.error('U instrukce CONCAT musí být počet argumentů roven 3', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "string" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není string', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-        if(self.isValidSymb(args[2]) == False):
-            self.error('Symbol není validní', 53)
+    def concatIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
 
         # value1
         value1 = ""
@@ -1230,68 +1015,33 @@ class interpret:
     #
     # Instruction INT2CHAR
     #
-    def int2charIns(self, args):
-        if(len(args) != 2):
-            self.error('U instrukce INT2CHAR musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "string" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není int', 53)
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
+    def int2charIns(self, opCode, args):
 
-        # získání pozice
-        position = 0
-        if(self.isValidVar(args[1]) == False):
-            if(args[1].get("type") != 'int'):
-                self.error('Symbol není int', 53)
-            position = int(args[1].text)
-        else:
-            if((self.GF.get(self.getSymbValue(args[1])).get("type") != "int") and
-                (self.GF.get(self.getSymbValue(args[1])).get("type")) is not None):
-                self.error('Symbol není int', 53)
-            position = int(self.GF.get(self.getSymbValue(args[1])).get("value"))
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB])
 
-        # získání znaku
-        char = ""
-        if(self.isValidVar(args[1]) == False):
-            if(args[1].get("type") != 'int'):
-                self.error('Symbol není string', 53)
-            try:
-                char = chr(int(args[1].text))
-            except (ValueError):
-                # Není-li symb validní ordinální hodnota znaku v Unicode dojde k chybě 58.
-                self.error('Není validní ordinální hodnota znaku v Unicode', 58)
-        else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "int" and
-              (self.GF.get(self.getSymbValue(args[1])).get("type")) is not None):
-                self.error('Symbol není int', 53)
+        try:
+            # získání znaku
+            char = chr(int(self.getSymbolValue(args[1])))
 
-            try:
-                char = chr(int(self.GF.get(self.getSymbValue(args[1])).get("value")))
-            except (ValueError):
-                # Není-li symb validní ordinální hodnota znaku v Unicode dojde k chybě 58.
-                self.error('Není validní ordinální hodnota znaku v Unicode', 58)
-
-        # nastavení hodnoty
-        self.GF[self.getSymbValue(args[0])] = {"value": char, "type": "string"}
+            # nastavení hodnoty
+            self.setVariable(
+                self.getVariableFrame(args[0]),
+                self.getVariableName(args[0]),
+                char,
+                self.TYPE_STRING
+            )
+        # Není-li symb validní ordinální hodnota znaku v Unicode dojde k chybě 58.
+        except (ValueError):
+            self.error('Není validní ordinální hodnota znaku v Unicode', 58)
 
     #
     # Instruction INT2FLOAT
     #
-    def int2floatIns(self, args):
-        if(len(args) != 2):
-            self.error('U instrukce INT2FLOAT musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-        elif(self.GF.get(self.getSymbValue(args[0])).get("type") != "float" and
-            self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-            self.error('Proměnná není float', 53)
+    def int2floatIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR])
 
         if(self.isValidSymb(args[1]) == False):
             self.error('Symbol není validní', 53)
@@ -1319,15 +1069,10 @@ class interpret:
     #
     # Instruction READ
     #
-    def readIns(self, args):
-        if(len(args) != 2):
-            self.error('U instrukce READ musí být počet argumentů roven 2', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Hodnota ve variable: ' + args[0].text + ' není povolená nebo musí mít type var, type uvedený: ' + arg[0].get("type"), 53)
-        if(self.isValidType(args[1]) == False):
-            self.error('Type není validní, musí být z množiny int, bool, string', 53)
-        if(self.getSymbValue(args[0]) not in self.GF): # TODO: LF, TF
-            self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
+    def readIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_TYPE])
 
         type = args[1].text
 
@@ -1357,25 +1102,16 @@ class interpret:
             else:
                 value = "false"
 
-        self.GF[self.getSymbValue(args[0])] = {"value": value, "type": type}
-
-    #
-    # Funkce vrací hodnotu pro proměnnou.
-    # 
-    # Vstup: GF@název
-    def getVarValue(self, var):
-        if(self.getSymbType(var) == 'GF'):
-            if(self.getSymbValue(var) not in self.GF):
-                self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-            return self.GF[self.getSymbValue(var)]
-        # TODO: TF, LF
+        self.GF[self.getSymbolValue(args[0])] = {"value": value, "type": type}
 
     #
     # Funkce vrací hodnotu pro konstantu.
     #
     # Vstup: <arg1 type="string">světe</arg1>
-    def getConstValue(self, const):
-        return const.text
+    def getConstantValue(self, constObject):
+        return constObject.text
+    def getConstantType(self, constObject):
+        return constObject.get('type')
 
     #
     # Funkce vrátí hodnotu pro symbol.
@@ -1383,47 +1119,275 @@ class interpret:
     # Vstup: <arg1 type="var">GF@val</arg1>
     #        <arg1 type="string">světe</arg1>
     #
-    def getSymbValue2(self, symb):
+    def getSymbolValue(self, symbObject):
 
         # symbol je proměnná
-        if(self.isValidVar(symb)):
-          return self.getVarValue(symb.text)
+        if(self.isValidVariable(symbObject)):
+          return self.getVariable(
+              self.getVariableFrame(symbObject),
+              self.getVariableName(symbObject)
+          ).get('value')
 
         # symbol je konstanta
-        elif(self.isValidConst(symb)):
-          return self.getConstValue(symb)
+        elif(self.isValidConstant(symbObject)):
+          return self.getConstantValue(symbObject)
+
+    def getSymbolType(self, symbObject):
+
+        # symbol je proměnná
+        if(self.isValidVariable(symbObject)):
+          return self.getVariableType(symbObject)
+
+        # symbol je konstanta
+        elif(self.isValidConstant(symbObject)):
+          return self.getConstantType(symbObject)
 
     #
     # Instruction PUSHS
     #
-    def pushsIns(self, args):
-        if(len(args) != 1):
-            self.error('U instrukce PUSHS musí být počet argumentů roven 1', 52)
-        if(self.isValidSymb(args[0]) == False):
-            self.error('Symbol není validní', 53)
+    def pushsIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_SYMB])
 
         # přidání hodnoty na vrchol zásobníku
-        self.dataStack.append(self.getSymbValue2(args[0]))
+        self.dataStack.append(args[0])
 
     #
     # Instruction POPS
     #
-    def popsIns(self, args):
-        if(len(args) != 1):
-            self.error('U instrukce PUSHS musí být počet argumentů roven 1', 52)
-        if(self.isValidVar(args[0]) == False):
-            self.error('Proměnná není validní', 53)
+    def popsIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR])
 
         # vytáhnutí hodnoty z vrcholu zásobníku
         # zásobník nesmí být prázdný
         try:
-            value = self.dataStack.pop()
+            symbObject = self.dataStack.pop()
+
+            # nastavení hodnoty do proměnné
+            self.setVariable(
+                self.getVariableFrame(args[0]),
+                self.getVariableName(args[0]),
+                self.getSymbolValue(symbObject),
+                self.getVariableTypeFromValue(symbObject)
+            )
         except (IndexError):
             self.error('Datový zásobník je prázdný', 56)
 
-        # nastavení hodnoty do proměnné
-        # TODO: TF, LF
-        self.GF[self.getSymbValue(args[0])] = {"value": value, "type": self.GF[self.getSymbValue(args[0])]['type']}
+    def getVariableTypeFromValue(self, object):
+        if(self.isValidInteger(object)):
+            return self.TYPE_INTEGER 
+        elif(self.isValidBoolean(object)):
+            return self.TYPE_BOOLEAN
+        elif(self.isValidType(object)):
+            return self.TYPE_TYPE
+        elif(self.isValidFloat(object)):
+            return self.TYPE_FLOAT
+        elif(self.isValidString(object)):
+            return self.TYPE_STRING
+        elif(self.isValidVariable(object)):
+            return self.TYPE_VAR
+
+
+    def checkInstructionArgs(self, opCode, argsObject, requiredArgs, requiredArgsType = []):
+        if(len(requiredArgs) != len(argsObject)):
+            self.error('U instrukce ' + opCode + ' musí být počet argumentů roven ' + len(requiredArgs), 52)
+
+        requiredArgsCounter = 0
+        for requiredArg in requiredArgs:
+             if(requiredArg == self.TYPE_VAR):
+                if(not self.isValidVariable(argsObject[requiredArgsCounter])):
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu proměnná (var) není validní', 53)
+             elif(requiredArg == self.TYPE_SYMB):
+                if(not self.isValidSymbol(argsObject[requiredArgsCounter])):
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu symbol (var, const) není validní', 53)
+             elif(requiredArg == self.TYPE_LABEL):
+                if(not self.isValidLabel(argsObject[requiredArgsCounter])):
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu návěští (label) není validní', 53)
+             elif(requiredArg == self.TYPE_TYPE):
+                if(not self.isValidType(argsObject[requiredArgsCounter])):
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu návěští (label) není validní', 53)
+
+             requiredArgsCounter+=1
+
+        requiredArgsTypeCounter = 0
+        for requiredArgType in requiredArgsType:
+             if(requiredArgType == self.TYPE_INTEGER):
+                if(not self.isValidInteger(argsObject[requiredArgsTypeCounter])):
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_INTEGER + ' není validní', 53)
+
+             requiredArgsTypeCounter+=1
+
+        return True
+
+    #
+    # Instruction CREATEFRAME
+    #
+    def createFrameIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [])
+
+        # vytvoří nový dočasný rámec a zahodí případný obsah původního dočasného rámce
+        self.TF = {}
+
+    #
+    # Instruction PUSHFRAME
+    #
+    def pushFrameIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [])
+
+        # dočasný rámec k přesunutí musí existovat
+        if(self.TF is None):
+            self.error('Pokus o přístup k nedefinovanému dočasnému rámci', 53)
+
+        # přesun TF na zásobník rámců
+        self.LFStack.append(self.TF)
+
+        # dočasný rámec je po přesunutí nedefinován
+        self.TF = None
+
+    #
+    # Instruction MOVE
+    #
+    def moveIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB])
+
+        # hodnota symb
+        value = self.getSymbolValue(args[1])
+
+        # zkopíruje hodnotu symb do var
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]), 
+            value,
+            self.getVariableTypeFromValue(value)
+        )
+
+    #
+    # Nastavuje hodnotu a typ proměnné dle uvedeného rámce.
+    # V případě varValue None nebo varType None se jedná o deklaraci
+    #
+    def setVariable(self, varFrame, varName, varValue, varType):
+
+        # globální rámec
+        if(varFrame == self.FRAME_GLOBAL):
+
+            # automaticky inicializován na začátku interpretace, kontroluju tedy pouze zda proměnná existuje pokud se nejedná o deklaraci
+            if(varValue != None or varType != None):
+                if(varName not in self.GF):
+                    self.error('Proměnná:' + varName + ' na GF neexistuje', 54)
+
+            # nastav
+            self.GF[varName] = {"value": varValue, "type": varType}
+ 
+        # lokální rámec
+        elif(varFrame == self.FRAME_LOCAL):
+
+            # zásobník rámců musí obsahovat alespoň 1 lokální rámec
+            if(len(self.LFStack) == 0):
+                self.error('Zásobník rámců je prázdný, žádný lokální rámec není v aktuální chvíli definovaný', 55)
+
+            currentLFStack = len(self.LFStack) - 1
+
+            # kontrola zda proměnná existuje pokud se nejedná o deklaraci
+            if(varValue != None or varType != None):
+                if(varName not in self.LFStack[currentLFStack]):
+                    self.error('Proměnná:' + varName + ' na aktuálním LF neexistuje', 54)
+
+            # nastav
+            self.LFStack[currentLFStack][varName] = {'value': varValue, 'type': varType}
+
+        # dočasný rámec
+        elif(varFrame == self.FRAME_TEMPORARY):
+
+            # dočasný rámec musí existovat
+            if(self.TF == None):
+                self.error('Dočasný rámec je nedefinovaný', 55)
+
+            # kontrola zda proměnná existuje pokud se nejedná o deklaraci
+            if(varValue != None or varType != None):
+                if(varName not in self.TF):
+                    self.error('Proměnná:' + varName + ' na TF neexistuje', 54)
+
+            # nastav
+            self.TF[varName] = {'value': varValue, 'type': varType}
+
+    #
+    # Vrací hodnotu proměnné dle uvedeného rámce.
+    #
+    # Výstup: {'value': X, 'type': Y}
+    #
+    def getVariable(self, varFrame, varName):
+
+         # globální rámec
+        if(varFrame == self.FRAME_GLOBAL):
+
+            # globální rámec je automaticky inicializován na začátku interpretace, stačí kontrolovat zda proměnná existuje
+            if(varName not in self.GF):
+                self.error('Proměnná:' + varName + ' na GF neexistuje', 54)
+
+            # vrať
+            return self.GF[varName]
+
+        # lokální rámec
+        elif(varFrame == self.FRAME_LOCAL):
+
+            # zásobník rámců musí obsahovat alespoň 1 lokální rámec
+            if(len(self.LFStack) == 0):
+                self.error('Zásobník rámců je prázdný, žádný lokální rámec není v aktuální chvíli definovaný', 55)
+
+            currentLFStack = len(self.LFStack) - 1
+            if(varName not in self.LFStack[currentLFStack]):
+                self.error('Proměnná:' + varName + ' na GF neexistuje', 54)
+
+            # vrať
+            return self.LFStack[currentLFStack][varName]
+
+        # dočasný rámec
+        elif(varFrame == self.FRAME_TEMPORARY):
+
+            # dočasný rámec musí existovat
+            if(self.TF == None):
+                self.error('Dočasný rámec je nedefinovaný', 55)
+
+            # neexistuje proměnná
+            if(varName not in self.TF):
+                self.error('Proměnná:' + varName + ' na TF neexistuje', 54)
+
+            # vrať
+            return self.TF[varName]
+
+    def getVariableFrame(self, arg):
+        return arg.text.split("@")[0]
+
+    def getVariableName(self, arg):
+        return arg.text.split("@")[1]
+
+    def getVariableType(self, arg):
+        return arg.get('type')
+
+    #
+    # Instruction DEFVAR
+    #
+    def defVarIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR])
+
+        # nastav (bez určení typu a hodnoty)
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            None,
+            None
+        )
 
     #
     # Funkce obstarává zavolání pro každou instrukci zvlášť, opcode v xml buď odpovídá některé z povolených instrukcí nebo funkce skončí chybou.
@@ -1432,101 +1396,122 @@ class interpret:
     def executeInstruction(self, opcode, args):
         upperOpCode = opcode.upper()
 
-        #'CREATEFRAME':
-        #'PUSHFRAME':
-        #'RETURN':
-        #'CALL':
+        #'RETURN':  # TODO:
+        #'CALL':  # TODO:
         if(upperOpCode == 'MOVE'):
-            self.moveIns(args)
+            self.moveIns(opcode, args)
+        if(upperOpCode == 'CREATEFRAME'):
+            self.createFrameIns(opcode, args)
+        elif(upperOpCode == 'PUSHFRAME'):
+            self.pushFrameIns(opcode, args)
         elif(upperOpCode == 'INT2CHAR'):
-            self.int2charIns(args)
+            self.int2charIns(opcode, args)
         elif(upperOpCode == 'INT2FLOAT'):
-            self.int2floatIns(args)
+            self.int2floatIns(opcode, args)
         elif(upperOpCode == 'FLOAT2INT'):
-            self.float2intIns(args)
+            self.float2intIns(opcode, args)
         elif(upperOpCode == 'BREAK'):
-            self.breakIns(args)
+            self.breakIns(opcode, args)
         elif(upperOpCode == 'POPS'):
-            self.popsIns(args)
+            self.popsIns(opcode, args)
         elif(upperOpCode == 'PUSHS'):
-            self.pushsIns(args)
+            self.pushsIns(opcode, args)
         elif(upperOpCode == 'DEFVAR'):
-            self.defVarIns(args)
+            self.defVarIns(opcode, args)
+        elif(upperOpCode == 'BREAK'):
+            self.breakIns(opcode, args)
         elif(upperOpCode == 'WRITE'):
-            self.writeIns(args)
+            self.writeIns(opcode, args)
         elif(upperOpCode == 'DPRINT'):
-            self.dprintIns(args)
+            self.dprintIns(opcode, args)
         elif(upperOpCode == 'ADD'):
-            self.addIns(args)
+            self.addIns(opcode, args)
         elif(upperOpCode == 'SUB'):
-            self.subIns(args)
+            self.subIns(opcode, args)
         elif(upperOpCode == 'MUL'):
-            self.mulIns(args)
+            self.mulIns(opcode, args)
         elif(upperOpCode == 'IDIV'):
-            self.idivIns(args)
+            self.idivIns(opcode, args)
         elif(upperOpCode == 'LT'):
-            self.ltIns(args)
+            self.ltIns(opcode, args)
         elif(upperOpCode == 'EQ'):
-            self.eqIns(args)
+            self.eqIns(opcode, args)
         elif(upperOpCode == 'GT'):
-            self.gtIns(args)
+            self.gtIns(opcode, args)
         elif(upperOpCode == 'AND'):
-            self.andIns(args)
+            self.andIns(opcode, args)
         elif(upperOpCode == 'OR'):
-            self.orIns(args)
+            self.orIns(opcode, args)
         elif(upperOpCode == 'NOT'):
-            self.notIns(args)
+            self.notIns(opcode, args)
         elif(upperOpCode == 'STRI2INT'):
-            self.stri2intIns(args)
+            self.stri2intIns(opcode, args)
         elif(upperOpCode == 'CONCAT'):
-            self.concatIns(args)
+            self.concatIns(opcode, args)
         elif(upperOpCode == 'GETCHAR'):
-            self.getcharIns(args)
+            self.getcharIns(opcode, args)
         elif(upperOpCode == 'SETCHAR'):
-            self.setcharIns(args)
+            self.setcharIns(opcode, args)
         elif(upperOpCode == 'READ'):
-            self.readIns(args)
+            self.readIns(opcode, args)
         elif(upperOpCode == 'STRLEN'):
-            self.strlenIns(args)
+            self.strlenIns(opcode, args)
         elif(upperOpCode == 'TYPE'):
-            self.typeIns(args)
+            self.typeIns(opcode, args)
         elif(upperOpCode == 'LABEL'):
-            self.labelIns(args)
+            self.labelIns(opcode, args)
         elif(upperOpCode == 'JUMP'):
-            self.jumpIns(args)
+            self.jumpIns(opcode, args)
         elif(upperOpCode == 'JUMPIFEQ'):
-            self.jumpifeqIns(args)
+            self.jumpifeqIns(opcode, args)
         elif(upperOpCode == 'JUMPIFNEQ'):
-            self.jumpifneqIns(args)
+            self.jumpifneqIns(opcode, args)
         elif(upperOpCode == 'EXIT'):
-            self.exitIns(args)
+            self.exitIns(opcode, args)
 
         # neznámý operační kód
         else:
             self.error('Instrukce: ' + opcode.upper() + ' neexistuje', 32)
 
         # instrukci se podařilo provést bez erroru, inkrementujeme provedené instrukce
-        if(self.stats.get('--insts', None) != None):
-            self.stats['--insts'] += 1
+        if(self.statsParameters.get('--insts', None) != None):
+            self.statsParameters['--insts'] += 1
 
-        # prochází všechny frames a sečte proměnné, které nejsou icinializované, porovná a případně uloží do statistik
-        var_count = 0
-        for gvar in self.GF:
-            if(self.GF[gvar].get("value") != None):
-                var_count += 1
-        if(self.LF != None):
-            for gvar in self.LF:
-                if(self.LF[gvar].get("value") != None):
-                    var_count += 1
-        if(self.TF != None):
-            for gvar in self.TF:
-                if(self.TF[gvar].get("value") != None):
-                    var_count += 1
-        if(self.stats.get('--vars', None) != None):
-            if(var_count > self.stats['--vars']):
-                self.stats['--vars'] = var_count
+        # projde všechny rámce a sečte proměnné, které jsou inicializované
+        if(self.statsParameters.get('--vars', None) != None):
+
+            # pokud je to víc než je zatím uloženo, přepíše hodnotu
+            count = self.getTotalCountOfInitializedVariables()
+            if(count > self.statsParameters['--vars']):
+                self.statsParameters['--vars'] = count
 
         return 0
+
+    #
+    # Vrátí celkový počet inicializovaných proměnných ze všech aktuálně existujících rámců
+    #
+    def getTotalCountOfInitializedVariables(self):
+
+        # globální rámec
+        count = 0
+        for GFVariableName in self.GF:
+            if(self.GF[GFVariableName].get("value") != None):
+                count += 1
+
+        # projde všechny lokální rámce
+        if(self.LFStack != None):
+            for LF in self.LFStack:
+                for LFVariableName in LF:
+                    if(self.LFStack[LF][LFVariableName].get("value") != None):
+                        count += 1
+
+        # dočasný rámec
+        if(self.TF != None):
+            for TFVariableName in self.TF:
+                if(self.TF[TFVariableName].get("value") != None):
+                    count += 1
+
+        return count
 
     #
     # Funkce slouží na parsování argumentů z příkazové řádky
@@ -1543,7 +1528,7 @@ class interpret:
         # parsování argumentů
         result = argparser.parse_args()
 
-        # --help
+        # nápověda
         if result.help == True:
             argparser.print_help()
             sys.exit(0)
@@ -1551,13 +1536,19 @@ class interpret:
         # validování argumentů
         self.validateCmdArgs(result)
 
-        # --stats; na pořadí záleží
-        if(result.stats != None):
-            for arg in sys.argv:
-                if(arg == '--insts' or arg == '--vars'):
-                    self.stats[arg] = 0
+        # rozšíření --stats
+        self.parseExtensionStatsParameters(result)
 
         return result
+
+    #
+    # Funkce se stará o parsování argumentů pro rozšíření --stats (záleží na pořadí)
+    #
+    def parseExtensionStatsParameters(self, opts):
+        if(opts.stats != None):
+            for arg in sys.argv:
+                if(arg == '--insts' or arg == '--vars'):
+                    self.statsParameters[arg] = 0
 
     #
     # Funkce se stará o validování argumentů (nevhodné rozmezí hodnot, nevhodné kombinace argumentů atp.)
