@@ -249,6 +249,8 @@ class Parser {
    */
   function parseLanguage() {
 
+    $ecode = 0;
+
     // standard input
     $stdin = fopen('php://stdin', 'r');
 
@@ -309,28 +311,38 @@ class Parser {
           case "MOVE":
           case "INT2TOCHAR":
           case "NOT":
-            $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB))) != 0) {
+                return $ecode;
+            }
             break;
           case "CREATEFRAME":
           case "PUSHFRAME":
           case "POPFRAME":
           case "RETURN":
           case "BREAK":
-            $this->ins($ins, $args);
+            if(($ecode = $this->ins($ins, $args)) != 0) {
+                return $ecode;
+            }
             break;
           case "POPS":
           case "DEFVAR":
-            $this->ins($ins, $args, array(Parser::INS_ARG_VAR));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR))) != 0) {
+                return $ecode;
+            }
             break;
           case "CALL":
             $this->jumpsCount++;
-            $this->ins($ins, $args, array(Parser::INS_ARG_LABEL));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL))) != 0) {
+                return $ecode;
+            }
             break;
           case "PUSHS":
           case "WRITE":
           case "EXIT":
           case "DPRINT":
-            $this->ins($ins, $args, array(Parser::INS_ARG_SYMB));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_SYMB))) != 0) {
+                return $ecode;
+            }
             break;
           case "ADD":
           case "SUB":
@@ -345,28 +357,39 @@ class Parser {
           case "CONCAT":
           case "GETCHAR":
           case "SETCHAR":
-            $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB))) != 0) {
+                return $ecode;
+            }
             break;
           case "READ":
-            $this->ins($ins, $args, array(Parser::INS_ARG_VAR));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR))) != 0) {
+                return $ecode;
+            }
             break;
           case "STRLEN":
           case "TYPE":
-            $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB))) != 0) {
+                return $ecode;
+            }
             break;
           case "LABEL":
             $this->labelsCount++;
             $this->insLabel($ins, $args);
-            $this->ins($ins, $args, array(Parser::INS_ARG_LABEL));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL))) != 0) {
+                return $ecode;
+            }
             break;
           case "JUMP":
             $this->jumpsCount++;
-            $this->ins($ins, $args, array(Parser::INS_ARG_LABEL));
-            break;
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL))) != 0) {
+                return $ecode;
+            }
           case "JUMPIFEQ":
           case "JUMPIFNEQ":
             $this->jumpsCount++;
-            $this->ins($ins, $args, array(Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB));
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB))) != 0) {
+                return $ecode;
+            }
             break;
           default:
             // neznámý nebo chybný operační kód ve zdrojovém kódu zapsaném v IPPcode19
@@ -441,6 +464,8 @@ class Parser {
       'opcode' => $name,
       'args' => $argsXml
     );
+
+    return 0;
   }
 
   /**
