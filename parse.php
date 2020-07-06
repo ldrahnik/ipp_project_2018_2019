@@ -444,7 +444,7 @@ class Parser {
           );
           break;
         case Parser::INS_ARG_TYPE:
-          if(!$this->isCorrectSymbName($arg)) {
+          if(!$this->isCorrectTypeName($arg)) {
             return 23;
           }
           $argsXml[$argsCounter++] = array(
