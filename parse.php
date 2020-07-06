@@ -348,7 +348,6 @@ class Parser {
             $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB));
             break;
           case "READ":
-            //$this->insVarType($ins, $args);
             $this->ins($ins, $args, array(Parser::INS_ARG_VAR));
             break;
           case "STRLEN":
