@@ -169,7 +169,7 @@ class interpret:
                         self.error('Tag pro každý operand instrukce musí obsahovat arg + číslo pořadí argumentu inkrementující se o 1, začínající na 1. Argument číslo: ' + str(argumentOrder) + ' má číslo: ' + items[0], 31)
                 else:
                     self.error('Tag pro každý operand instrukce musí obsahovat arg + číslo pořadí argumentu inkrementující se o 1, začínající na 1', 31)
-                argumentOrder+=1
+                argumentOrder += 1
 
             # vykonání konkrétní instrukce (zatím nevíme, jestli taková vůbec existuje, zkontrolovali jsme pouze formální stránku XML)
             self.executeInstruction(child.get('opcode'), list(child))
@@ -309,8 +309,16 @@ class interpret:
         # získání hodnoty
         value = self.getSymbolValue(args[0])
 
+        # nahrazení escapovaných hodnot
+        def replace(match):  # TODO: refactor
+            return chr(int(match.group(1)))
+
+        aux = str(value)
+        regex = re.compile(r"\\(\d{1,3})")
+        printValue = regex.sub(replace, aux)
+
         # tisknutí
-        print(value, end="")
+        print(printValue, end="")
 
     #
     # Instruction EXIT
@@ -754,46 +762,32 @@ class interpret:
     #
     # Instruction GETCHAR
     #
-    def getcharIns(self, opCode, args):  # TODO:
+    def setcharIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_STRING, self.TYPE_INTEGER, self.TYPE_STRING])
 
         # získání pozice
-        position = 0
-        if(self.isValidVar(args[2]) == False):
-            if(args[2].get("type") != 'int'):
-                self.error('Symbol není int', 53)
-            position = int(args[2].text)
-        else:
-            if(self.GF.get(self.getSymbValue(args[2])).get("type") != "int"):
-                self.error('Symbol není int', 53)
-            position = int(self.GF.get(self.getSymbValue(args[2])).get("value"))
+        position = int(self.getSymbolValue(args[1]))
 
-        # získání znaku
-        char = ""
-        if(self.isValidVar(args[1]) == False):
-            if(args[1].get("type") != 'string'):
-                self.error('Symbol není string', 53)
+        text = self.getVariable(self.getVariableFrame(args[0]), self.getVariableName(args[0])).get('value')
 
-            # indexace mimo daný řetězec vede na chybu 58
-            if(position >= len(args[1].text)):
-                self.error('Indexace mimo daný řetězec', 58)
+        # pozice mimo daný řetězec vede na chybu 58
+        if (position >= len(text) or (position < 0)):
+            self.error('Indexace mimo daný řetězec', 58)
 
-            char = args[1].text[position]
-        else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "string"):
-                self.error('Symbol není string', 53)
+        # získání prvního znaku
+        char = self.getSymbolValue(args[2])[0]
 
-            # indexace mimo daný řetězec vede na chybu 58
-            if(position >= len(self.GF.get(self.getSymbValue(args[1])).get("value"))):
-                self.error('Indexace mimo daný řetězec', 58)
+        text[position] = char
 
-            char = self.GF.get(self.getSymbValue(args[1])).get("value")[position]
-
-        # uložení znaku z pozice
-        self.GF[self.getSymbValue(args[0])] = {"value": char, "type": "string"}
-
+        # nahrazení znaku
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            text,
+            self.getVariableType(args[0])
+        )
 
     #
     # Instruction LT
@@ -918,41 +912,31 @@ class interpret:
     #
     # Instruction SETCHAR
     #
-    def setcharIns(self, opCode, args):  # TODO:
+    def getcharIns(self, opCode, args):  # TODO:
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_STRING, self.TYPE_INTEGER])
 
         # získání pozice
-        position = 0
-        if(self.isValidVar(args[1]) == False):
-            if(args[1].get("type") != 'int'):
-                self.error('Symbol není int', 53)
-            position = int(args[1].text)
-        else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "int"):
-                self.error('Symbol není int', 53)
-            position = int(self.GF.get(self.getSymbValue(args[1])).get("value"))
+        position = int(self.getSymbolValue(args[2]))
 
-        # získání znaku
-        char = ""
-        if(self.isValidVar(args[2]) == False):
-            if(args[2].get("type") != 'string'):
-                self.error('Symbol není string', 53)
-            char = args[2].text[0]
-        else:
-            if(self.GF.get(self.getSymbValue(args[2])).get("type") != "string"):
-                self.error('Symbol není string', 53)
-            char = self.GF.get(self.getSymbValue(args[2])).get("value")[0]
+        # v textu
+        text = self.getSymbolValue(args[1])
 
-        # indexace mimo daný řetězec vede na chybu 58
-        if(position >= len(self.GF.get(self.getSymbValue(args[0])).get("value"))):
+        # pozice mimo daný řetězec vede na chybu 58
+        if (position >= len(text) or (position < 0)):
             self.error('Indexace mimo daný řetězec', 58)
 
-        # uložení znaku do proměnné na pozici
-        newString = list(self.GF.get(self.getSymbValue(args[0])).get("value"))
-        newString[position] = char
-        self.GF[self.getSymbValue(args[0])] = {"value": "".join(newString), "type": "string"} # TODO: LF, TF
+        # získání znaku
+        char = text[position]
+
+        # uložení znaku
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            char,
+            self.TYPE_STRING
+        )
 
     #
     # Instruction TYPE
@@ -1066,24 +1050,8 @@ class interpret:
         # nastavení hodnoty
         self.GF[self.getSymbValue(args[0])] = {"value": floatvalue, "type": "float"}
 
-    #
-    # Instruction READ
-    #
-    def readIns(self, opCode, args):  # TODO:
+    def valueByType(self, value, type): # TODO: naimplementovat při ukládání proměnné
 
-        # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_TYPE])
-
-        type = args[1].text
-
-        # v případě existujícího input souboru vezmeme z něj
-        if(self.inputFile != None):
-            try:
-                value = self.inputFile.readline().rstrip()
-            except:
-                self.error('Nepodařilo se číst soubor pro čtení vstupu',11)
-        else:
-            value = input()
         if(type == "string"):
             try:
                 value = str(value)
@@ -1102,7 +1070,34 @@ class interpret:
             else:
                 value = "false"
 
-        self.GF[self.getSymbolValue(args[0])] = {"value": value, "type": type}
+        return value
+
+    #
+    # Instruction READ
+    #
+    def readIns(self, opCode, args):  # TODO:
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_TYPE])
+
+        type = args[1].text
+
+        # v případě existujícího input souboru vezmeme z něj
+        if(self.inputFile != None):
+            try:
+                value = self.inputFile.readline().rstrip()
+            except:
+                self.error('Nepodařilo se číst soubor pro čtení vstupu', 11)
+        else:
+            value = input()
+
+        # nastavení hodnoty
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            value,
+            type
+        )
 
     #
     # Funkce vrací hodnotu pro konstantu.
@@ -1217,6 +1212,7 @@ class interpret:
              if(requiredArgType == self.TYPE_INTEGER):
                 if(not self.isValidInteger(argsObject[requiredArgsTypeCounter])):
                     self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_INTEGER + ' není validní', 53)
+              # TODO: string check / type (read ins need int, string, bool) etc.
 
              requiredArgsTypeCounter+=1
 

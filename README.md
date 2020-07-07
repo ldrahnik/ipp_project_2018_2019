@@ -73,9 +73,9 @@ parametr se nesmí kombinovat s parametrem --int-script)
 ```
 make test
 # pustí projekt s dodanými testy a výstupy uloží do složky
-cd ./tests/ && bash _stud_tests.sh  /home/ldrahnik/projects/ipp_project_2018_2019 /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/
+cd ./tests/ && bash _stud_tests.sh  /home/ldrahnik/projects/ipp_project_2018_2019 /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/log/
 # provede porovnání výstupu testů
-cd ./tests/ && bash _stud_tests_diff.sh  /home/ldrahnik/projects/ipp_project_2018_2019/jexamxml.jar /home/ldrahnik/projects/ipp_project_2018_2019/cls-supplementary-tests/jexamxml_tmp /home/ldrahnik/projects/ipp_project_2018_2019/cls-supplementary-tests/options /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/
+cd ./tests/ && bash _stud_tests_diff.sh  /home/ldrahnik/projects/ipp_project_2018_2019/jexamxml.jar /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/jexamxml_tmp /home/ldrahnik/projects/ipp_project_2018_2019/tests/options /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/log/
 ############################### PARSE
 *******TEST read_test PASSED
 *******TEST simple_tag PASSED
@@ -83,10 +83,20 @@ cd ./tests/ && bash _stud_tests_diff.sh  /home/ldrahnik/projects/ipp_project_201
 ############################### INTERPRET
 *******TEST stack_test PASSED
 *******TEST write_test PASSED
+############################### BOTH
+############### PARSER
+*******TEST error_string_out_of_range PASSED
+############### INTERPRET
+*******TEST error_string_out_of_range PASSED
+############### PARSER
+*******TEST read_test PASSED
+############### INTERPRET
+*******TEST read_test PASSED
 # úklid
-rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/cls-supplementary-tests/jexamxml_tmp
+rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/jexamxml_tmp
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/*
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/*
+rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/log/*
 ```
 
 ## Odevzdané soubory:

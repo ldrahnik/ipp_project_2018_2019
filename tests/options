@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="IPPcode19">
+<instruction order="1" opcode="WRITE">
+<!-- Deleted Element(s) -->
+<arg1 type="int">0</arg1>
+<!-- Added Element(s) -->
+<arg0 type="int">0</arg0>
+</instruction>
+<instruction order="2" opcode="WRITE">
+<!-- Deleted Element(s) -->
+<arg1 type="string">abc</arg1>
+<!-- Added Element(s) -->
+<arg0 type="string">abc</arg0>
+</instruction>
+</program>
