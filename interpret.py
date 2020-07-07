@@ -76,13 +76,6 @@ class interpret:
     dataStack = []
 
     #
-    # Datový zásobník. Operační kód zásobníkových instrukcí je zakončen písmenem „S“.
-    # Zásobníkové instrukce případně načítají chybějící operandy z datového zásobníku a
-    # výslednou hodnotu operace případně ukládají zpět na datový zásobník.
-    #
-    dataStack = []
-
-    #
     # Konstruktor volá funkci na parsování argumentů
     # Konstruktor volá funkci run na samotnou intepretaci
     #
