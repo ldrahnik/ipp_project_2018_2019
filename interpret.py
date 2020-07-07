@@ -679,30 +679,21 @@ class interpret:
     #
     # Instruction FLOAT2INT
     #
-    def float2intIns(self, opCode, args):  # TODO:
+    def float2intIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_FLOAT])
 
-        intvalue = 0
-        if(self.isValidVar(args[1]) == False):
-            if(args[1].get("type") != 'float'):
-                self.error('Symbol není float', 53)
-            try:
-                intvalue = int(float(args[1].text))
-            except:
-                self.error('Není validní hodnota', 58)
-        else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "float"):
-                self.error('Symbol není float', 53)
+        # získání hodnoty
+        value = int(float(self.getSymbolValue(args[1])))
 
-            try:
-                intvalue = int(float(self.GF.get(self.getSymbValue(args[1])).get("value")))
-            except:
-                self.error('Není validní hodnota', 58)
-
-        # uložení hodnoty int
-        self.GF[self.getSymbValue(args[0])] = {"value": intvalue, "type": "int"}
+        # nastavení hodnoty
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            value,
+            self.TYPE_INTEGER
+        )
 
     #
     # Instruction NOT
