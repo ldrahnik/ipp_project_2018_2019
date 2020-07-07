@@ -1186,6 +1186,9 @@ class interpret:
             return self.TYPE_VAR
 
 
+    #
+    # Funkce kontroluje argumenty instrukce.
+    #
     def checkInstructionArgs(self, opCode, argsObject, requiredArgs, requiredArgsType = []):
         if(len(requiredArgs) != len(argsObject)):
             self.error('U instrukce ' + opCode + ' musí být počet argumentů roven ' + len(requiredArgs), 52)
@@ -1212,7 +1215,12 @@ class interpret:
              if(requiredArgType == self.TYPE_INTEGER):
                 if(not self.isValidInteger(argsObject[requiredArgsTypeCounter])):
                     self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_INTEGER + ' není validní', 53)
-              # TODO: string check / type (read ins need int, string, bool) etc.
+             if(requiredArgType == self.TYPE_STRING):
+                if(not self.isValidString(argsObject[requiredArgsTypeCounter])):
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_STRING + ' není validní', 53)
+             if(requiredArgType == self.TYPE_BOOLEAN):
+                if(not self.isValidBoolean(argsObject[requiredArgsTypeCounter])):
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_BOOLEAN + ' není validní', 53)
 
              requiredArgsTypeCounter+=1
 
