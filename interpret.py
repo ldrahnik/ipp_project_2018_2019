@@ -44,7 +44,7 @@ class interpret:
     TYPE_BOOLEAN_FALSE = 'false'
     TYPE_INTEGER = 'int'
     TYPE_STRING = 'string'
-    TYPE_NIL = 'nil' # TODO: chybí při kontrole isTypeValid
+    TYPE_NIL = 'nil'
     TYPE_FLOAT = 'float'
 
     #
@@ -257,6 +257,13 @@ class interpret:
         except ValueError:
             return False
 
+    def isValidNil(self, object):
+        if(object.get("type") != self.TYPE_NIL):
+            return False
+        if(object.text != self.TYPE_NIL)
+            return False
+        return True
+
     #
     # Funkce slouží pro kontrolu hodnoty konstanty předané parametrem arg dle jejího typu
     #
@@ -278,10 +285,14 @@ class interpret:
         elif(object.get("type") == self.TYPE_FLOAT and self.isValidFloat(object)):
             return True
 
+        # nil
+        elif(object.get("type") == self.TYPE_NIL and self.isValidNil(object)):
+            return True
+
         return False
 
     def isValidType(self, object):
-        if(re.match('^(' + self.TYPE_STRING + '|' + self.TYPE_INTEGER + '|' + self.TYPE_BOOLEAN + '|' + self.TYPE_FLOAT + '){1}$', object.text) != None):
+        if(re.match('^(' + self.TYPE_STRING + '|' + self.TYPE_INTEGER + '|' + self.TYPE_BOOLEAN + '|' + self.TYPE_FLOAT + self.TYPE_NIL + '){1}$', object.text) != None):
             return True
         return False
 
@@ -1164,6 +1175,9 @@ class interpret:
              elif(requiredArgType == self.TYPE_FLOAT):
                 if(not self.isValidFloat(argsObject[requiredArgsTypeCounter])):
                     self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_FLOAT + ' není validní', 53)
+             elif(requiredArgType == self.TYPE_NIL):
+                if(not self.isValidNil(argsObject[requiredArgsTypeCounter])):
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_NIL + ' není validní', 53)
 
              requiredArgsTypeCounter+=1
 
