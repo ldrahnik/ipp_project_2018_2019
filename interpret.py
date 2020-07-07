@@ -751,7 +751,7 @@ class interpret:
         )
 
     #
-    # Instruction GETCHAR
+    # Instruction SETCHAR
     #
     def setcharIns(self, opCode, args):
 
@@ -761,24 +761,26 @@ class interpret:
         # získání pozice
         position = int(self.getSymbolValue(args[1]))
 
+        # v řetězci
         text = self.getVariable(self.getVariableFrame(args[0]), self.getVariableName(args[0])).get('value')
-
-        # pozice mimo daný řetězec vede na chybu 58
-        if (position >= len(text) or (position < 0)):
-            self.error('Indexace mimo daný řetězec', 58)
 
         # získání prvního znaku
         char = self.getSymbolValue(args[2])[0]
 
-        text[position] = char
+        try:
+            # nahrazení znaku
+            text[position] = char
 
-        # nahrazení znaku
-        self.setVariable(
-            self.getVariableFrame(args[0]),
-            self.getVariableName(args[0]),
-            text,
-            self.getVariableType(args[0])
-        )
+            # uložení řetězce
+            self.setVariable(
+                self.getVariableFrame(args[0]),
+                self.getVariableName(args[0]),
+                text,
+                self.TYPE_STRING
+            )
+        # pozice mimo daný řetězec vede na chybu 58
+        except IndexError:
+            self.error('Indexace mimo daný řetězec', 58)
 
     #
     # Instruction LT
