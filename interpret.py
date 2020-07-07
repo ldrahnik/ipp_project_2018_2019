@@ -636,45 +636,31 @@ class interpret:
     #
     # Instruction STRI2INT
     #
-    def stri2intIns(self, opCode, args):  # TODO:
+    def stri2intIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_STRING, self.TYPE_INTEGER])
 
         # získání pozice
-        position = 0
-        if(self.isValidVar(args[2]) == False):
-            if(args[2].get("type") != 'int'):
-                self.error('Symbol není int', 53)
-            position = int(args[2].text)
-        else:
-            if(self.GF.get(self.getSymbValue(args[2])).get("type") != "int"):
-                self.error('Symbol není int', 53)
-            position = int(self.GF.get(self.getSymbValue(args[2])).get("value"))
+        position = self.getSymbolValue(args[2])
 
-        # získání znaku
-        char = 0
-        if(self.isValidVar(args[1]) == False):
-            if(args[1].get("type") != 'string'):
-                self.error('Symbol není string', 53)
+        # v řetězci
+        text = self.getSymbolValue(args[1])
 
-            # indexace mimo daný řetězec vede na chybu 58
-            if(position >= len(args[1].text)):
-                self.error('Indexace mimo daný řetězec', 58)
+        try:
+            # získání znaku
+            char = text[position]
 
-            char = ord(args[1].text[position])
-        else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "string"):
-                self.error('Symbol není string', 53)
-
-            # indexace mimo daný řetězec vede na chybu 58
-            if(position >= len(self.GF.get(self.getSymbValue(args[1])).get("value"))):
-                self.error('Indexace mimo daný řetězec', 58)
-
-            char = ord(self.GF.get(self.getSymbValue(args[1])).get("value")[position])
-
-        # uložení ordinální hodnoty znaku z pozice
-        self.GF[self.getSymbValue(args[0])] = {"value": char, "type": "string"}
+            # uložení řetězce
+            self.setVariable(
+                self.getVariableFrame(args[0]),
+                self.getVariableName(args[0]),
+                ord(char),
+                self.TYPE_INTEGER
+            )
+        # pozice mimo daný řetězec vede na chybu 58
+        except IndexError:
+            self.error('Indexace mimo daný řetězec', 58)
 
     #
     # Instruction FLOAT2INT
