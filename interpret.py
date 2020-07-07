@@ -910,9 +910,9 @@ class interpret:
 
         self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "bool"}
     #
-    # Instruction SETCHAR
+    # Instruction GETCHAR
     #
-    def getcharIns(self, opCode, args):  # TODO:
+    def getcharIns(self, opCode, args):
 
         # ověření argumentů
         self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_STRING, self.TYPE_INTEGER])
@@ -923,20 +923,20 @@ class interpret:
         # v textu
         text = self.getSymbolValue(args[1])
 
+        try:
+            # získání znaku
+            char = text[position]
+
+            # uložení znaku
+            self.setVariable(
+                self.getVariableFrame(args[0]),
+                self.getVariableName(args[0]),
+                char,
+                self.TYPE_STRING
+            )
         # pozice mimo daný řetězec vede na chybu 58
-        if (position >= len(text) or (position < 0)):
+        except IndexError:
             self.error('Indexace mimo daný řetězec', 58)
-
-        # získání znaku
-        char = text[position]
-
-        # uložení znaku
-        self.setVariable(
-            self.getVariableFrame(args[0]),
-            self.getVariableName(args[0]),
-            char,
-            self.TYPE_STRING
-        )
 
     #
     # Instruction TYPE
