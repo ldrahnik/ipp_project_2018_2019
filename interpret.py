@@ -734,30 +734,21 @@ class interpret:
     #
     # Instruction STRLEN
     #
-    def strlenIns(self, opCode, args):  # TODO:
+    def strlenIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_STRING])
 
         # zjištění délky
-        var_len = 0
-        if(self.isValidVar(args[1]) == False):
-            if(args[1].get("type") != 'string'):
-                self.error('Symbol není string', 53)
-            var_len = len(args[1].text)
-        else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "string"):
-                self.error('Symbol není string', 53)
-            var_len = len(self.GF.get(self.getSymbValue(args[1])).get("value"))
+        length = len(self.getSymbolValue(args[1]))
 
-        # uložení délky na správné místo
-        if(self.getSymbType(args[0]) == 'GF'): # TODO: LF, TF
-            if(self.getSymbValue(args[0]) not in self.GF):
-                self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-            if(self.GF.get(self.getSymbValue(args[0])).get("type") != "int" and
-               self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-               self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-            self.GF[self.getSymbValue(args[0])] = {"value": var_len, "type": "int"}
+        # uložení
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            length,
+            self.TYPE_INTEGER
+        )
 
     #
     # Instruction GETCHAR
