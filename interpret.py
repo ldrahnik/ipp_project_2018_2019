@@ -1206,7 +1206,7 @@ class interpret:
                     self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu návěští (label) není validní', 53)
              elif(requiredArg == self.TYPE_TYPE):
                 if(not self.isValidType(argsObject[requiredArgsCounter])):
-                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu návěští (label) není validní', 53)
+                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu typ (type) není validní', 53)
 
              requiredArgsCounter+=1
 
