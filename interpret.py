@@ -941,26 +941,21 @@ class interpret:
     #
     # Instruction TYPE
     #
-    def typeIns(self, opCode, args):  # TODO:
+    def typeIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB])
 
         # zjištění typu
-        type = ""
-        if(self.isValidVar(args[1]) == False):
-            type = args[1].get("type")
-        else:
-            type = self.GF.get(self.getSymbValue(args[1])).get("type")
+        type = self.getSymbolType(args[1])
 
         # uložení typu
-        if(self.getSymbType(args[0]) == 'GF'): # TODO: LF, TF
-            if(self.getSymbValue(args[0]) not in self.GF):
-                self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-            if(self.GF.get(self.getSymbValue(args[0])).get("type") != "string" and
-               self.GF.get(self.getSymbValue(args[0])).get("type") != None):
-               self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-            self.GF[self.getSymbValue(args[0])] = {"value": type, "type": "string"}
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            type,
+            self.TYPE_STRING
+        )
 
     #
     # Instruction CONCAT
@@ -1110,7 +1105,10 @@ class interpret:
 
         # symbol je proměnná
         if(self.isValidVariable(symbObject)):
-          return self.getVariableType(symbObject)
+          return self.getVariable(
+              self.getVariableFrame(symbObject),
+              self.getVariableName(symbObject)
+          ).get('type')
 
         # symbol je konstanta
         elif(self.isValidConstant(symbObject)):
@@ -1352,9 +1350,6 @@ class interpret:
 
     def getVariableName(self, arg):
         return arg.text.split("@")[1]
-
-    def getVariableType(self, arg):
-        return arg.get('type')
 
     #
     # Instruction DEFVAR
