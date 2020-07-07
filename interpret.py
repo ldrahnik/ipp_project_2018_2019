@@ -1,7 +1,6 @@
 #!/bin/env python3.6
 
 import argparse, sys
-import os
 import xml.etree.ElementTree as ET
 import re
 
