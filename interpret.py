@@ -54,7 +54,7 @@ class interpret:
     TYPE_LABEL = 'label'
     TYPE_SYMB = 'symb'
     TYPE_TYPE = 'type'
-    UNSPEC_TYPE = 'unspec_type'
+    TYPE_UNSPEC = 'TYPE_UNSPEC'
 
 
     jumpTo = None
@@ -354,7 +354,7 @@ class interpret:
     def addIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_INTEGER, self.TYPE_INTEGER])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_INTEGER, self.TYPE_INTEGER])
 
         # získání hodnot
         value1 = self.getSymbolValue(args[1])
@@ -377,7 +377,7 @@ class interpret:
     def mulIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_INTEGER, self.TYPE_INTEGER])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_INTEGER, self.TYPE_INTEGER])
 
         # získání hodnot
         value1 = self.getSymbolValue(args[1])
@@ -400,7 +400,7 @@ class interpret:
     def idivIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_INTEGER, self.TYPE_INTEGER])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_INTEGER, self.TYPE_INTEGER])
 
         # získání hodnot
         value1 = self.getSymbolValue(args[1])
@@ -423,7 +423,7 @@ class interpret:
     def subIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_INTEGER, self.TYPE_INTEGER])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_INTEGER, self.TYPE_INTEGER])
 
         # získání hodnot
         value1 = self.getSymbolValue(args[1])
@@ -915,7 +915,7 @@ class interpret:
     def getcharIns(self, opCode, args):  # TODO:
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.UNSPEC_TYPE, self.TYPE_STRING, self.TYPE_INTEGER])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_STRING, self.TYPE_INTEGER])
 
         # získání pozice
         position = int(self.getSymbolValue(args[2]))
@@ -1022,33 +1022,21 @@ class interpret:
     #
     # Instruction INT2FLOAT
     #
-    def int2floatIns(self, opCode, args):  # TODO:
+    def int2floatIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_INTEGER])
 
-        if(self.isValidSymb(args[1]) == False):
-            self.error('Symbol není validní', 53)
-
-        floatvalue = 0
-        if(self.isValidVar(args[1]) == False):
-            if(args[1].get("type") != 'int'):
-                self.error('Symbol není int', 53)
-            try:
-                floatvalue = float(int(args[1].text))
-            except:
-                self.error('Není validní hodnota', 58)
-        else:
-            if(self.GF.get(self.getSymbValue(args[1])).get("type") != "int"):
-                self.error('Symbol není int', 53)
-
-            try:
-                floatvalue = float(int(self.GF.get(self.getSymbValue(args[1])).get("value")))
-            except:
-                self.error('Není validní hodnota', 58)
+        # získání hodnoty
+        value = float(int(self.getSymbolValue(args[1])))
 
         # nastavení hodnoty
-        self.GF[self.getSymbValue(args[0])] = {"value": floatvalue, "type": "float"}
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            value,
+            self.TYPE_FLOAT
+        )
 
     def valueByType(self, value, type): # TODO: naimplementovat při ukládání proměnné
 
