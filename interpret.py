@@ -354,9 +354,9 @@ class interpret:
     #
     # Instruction BREAK
     #
-    def breakIns(self, opCode, args):  # TODO:
+    def breakIns(self):
         print('Global Frame: ' + str(self.GF), file=sys.stderr)
-        print('Local Frame: ' + str(self.LF), file=sys.stderr)
+        print('Local Frame: ' + str(self.LFStack), file=sys.stderr)
         print('Temporary Frame: ' + str(self.TF), file=sys.stderr)
         if((self.statsParameters.get('--insts', None) != None)):
             print('Provedené instrukce: ' + str(self.statsParameters['--insts']), file=sys.stderr)
@@ -1386,15 +1386,13 @@ class interpret:
         elif(upperOpCode == 'FLOAT2INT'):
             self.float2intIns(opcode, args)
         elif(upperOpCode == 'BREAK'):
-            self.breakIns(opcode, args)
+            self.breakIns()
         elif(upperOpCode == 'POPS'):
             self.popsIns(opcode, args)
         elif(upperOpCode == 'PUSHS'):
             self.pushsIns(opcode, args)
         elif(upperOpCode == 'DEFVAR'):
             self.defVarIns(opcode, args)
-        elif(upperOpCode == 'BREAK'):
-            self.breakIns(opcode, args)
         elif(upperOpCode == 'WRITE'):
             self.writeIns(opcode, args)
         elif(upperOpCode == 'DPRINT'):
