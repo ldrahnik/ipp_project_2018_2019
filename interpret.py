@@ -524,6 +524,14 @@ class interpret:
             self.TYPE_BOOLEAN
         )
 
+    def getLabel(self, label):
+
+        # existuje návěští?
+        if label in self.labels:
+            self.error('Neexistující návěští', 52)
+
+        return self.labels[label]
+
     def setLabel(self, labelObj):
 
         # label
@@ -550,12 +558,13 @@ class interpret:
     #
     # Instruction JUMP
     #
-    def jumpIns(self, opCode, args):  # TODO:
+    def jumpIns(self, opCode, args):
 
         # ověření argumentů
         self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL])
 
-        self.jumpTo = self.labels[args[0].text]
+        # nastavení skoku
+        self.jumpTo = self.getLabel(args[0])
 
     #
     # Instruction JUMPIFEQ
