@@ -673,29 +673,27 @@ class interpret:
     #
     # Instruction NOT
     #
-    def notIns(self, opCode, args): # TODO:
+    def notIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_BOOLEAN])
 
         # value
-        value1 = None
-        if(self.isValidVar(args[1]) == True):
-            if(self.GF.get(self.getSymbValue(args[1])).get('type') != 'bool'):
-                self.error('Symbol není validní', 53)
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            if(args[1].get("type") != 'bool'):
-                self.error('Symbol není validní', 53)
-            value1 = args[1].text
+        value = self.getSymbolValue(args[1])
 
-        # logická negace - NOT
-        result = None
-        if(value1 == "false"):
-            result = "true"
+        # NOT
+        if value:
+            result = self.TYPE_BOOLEAN_FALSE
         else:
-            result = "false"
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "bool"}
+            result = self.TYPE_BOOLEAN_TRUE
+
+        # nastavení hodnoty
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_BOOLEAN
+        )
 
     #
     # Instruction STRLEN
