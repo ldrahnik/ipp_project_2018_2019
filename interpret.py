@@ -471,40 +471,30 @@ class interpret:
     #
     # Instruction AND
     #
-    def andIns(self, opCode, args): # TODO:
+    def andIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_BOOLEAN, self.TYPE_BOOLEAN])
 
         # value1
-        value1 = None
-        if(self.isValidVar(args[1]) == True):
-            if(self.GF.get(self.getSymbValue(args[1])).get('type') != 'bool'):
-                self.error('Symbol není validní', 53)
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            if(args[1].get("type") != 'bool'):
-                self.error('Symbol není validní', 53)
-            value1 = args[1].text
+        value1 = self.getSymbolValue(args[1])
 
         # value2
-        value2 = None
-        if(self.isValidVar(args[2]) == True):
-            if(self.GF.get(self.getSymbValue(args[2])).get('type') != 'bool'):
-                self.error('Symbol není validní', 53)
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            if(args[2].get("type") != 'bool'):
-                self.error('Symbol není validní', 53)
-            value2 = args[2].text
+        value2 = self.getSymbolValue(args[2])
 
-        # logický součin - AND
-        result = None
-        if(value1 == "true" and value2 == "true"):
-            result = "true"
+        # AND
+        if value1 and value2:
+            result = self.TYPE_BOOLEAN_TRUE
         else:
-            result = "false"
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "bool"}
+            result = self.TYPE_BOOLEAN_FALSE
+
+        # uložení
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_BOOLEAN
+        )
 
     #
     # Instruction OR
