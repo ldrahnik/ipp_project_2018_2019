@@ -1106,26 +1106,10 @@ class interpret:
                 self.getVariableFrame(args[0]),
                 self.getVariableName(args[0]),
                 self.getSymbolValue(symbObject),
-                self.getVariableTypeFromValue(symbObject)
+                self.getSymbolType(symbObject)
             )
         except (IndexError):
             self.error('Datový zásobník je prázdný', 56)
-
-    def getVariableTypeFromValue(self, object):
-        if(self.isValidInteger(object)):
-            return self.TYPE_INTEGER 
-        elif(self.isValidBoolean(object)):
-            return self.TYPE_BOOLEAN
-        elif(self.isValidType(object)):
-            return self.TYPE_TYPE
-        elif(self.isValidFloat(object)):
-            return self.TYPE_FLOAT
-        elif(self.isValidString(object)):
-            return self.TYPE_STRING
-        elif(self.isValidVariable(object)):
-            return self.TYPE_VAR
-        elif(self.isValidNil(object)):
-            return self.TYPE_NIL
 
     #
     # V případě chybného vstupu bude do proměnné uložena implicitní hodnota (dle typu 0, prázdný řetězec nebo false).
@@ -1250,15 +1234,12 @@ class interpret:
         # ověření argumentů
         self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB])
 
-        # hodnota symb
-        value = self.getSymbolValue(args[1])
-
         # zkopíruje hodnotu symb do var
         self.setVariable(
             self.getVariableFrame(args[0]),
             self.getVariableName(args[0]), 
-            value,
-            self.getVariableTypeFromValue(value)
+            self.getSymbolValue(args[1]),
+            self.getSymbolType(args[1])
         )
 
     #
