@@ -143,7 +143,8 @@ class interpret:
                 self.error('Nepodařilo se otevřít soubor pro čtení vstupu: ' + opts.input,11)
 
         # procházení všech instrukcí
-        while self.instructionIndex <= len(root):
+        preRun = True
+        while self.instructionIndex <= len(root) or self.jumpTo != None:
 
             # nějaká instrukce chtěla skočit
             if(self.jumpTo != None):
@@ -151,7 +152,12 @@ class interpret:
                 self.instructionOrder = self.jumpTo + 1
                 self.jumpTo = None
             elif(self.instructionIndex == len(root)):
-                break
+                if preRun:
+                    preRun = False
+                    self.jumpTo = 0
+                    continue
+                else:
+                    break
 
             # čti instrukci
             child = root[self.instructionIndex]
@@ -176,7 +182,10 @@ class interpret:
                 argumentOrder += 1
 
             # vykonání konkrétní instrukce (zatím nevíme, jestli taková vůbec existuje, zkontrolovali jsme pouze formální stránku XML)
-            self.executeInstruction(child.get('opcode'), list(child))
+            if preRun:
+                self.executePreRunInstruction(child.get('opcode'), list(child))
+            else:
+                self.executeInstruction(child.get('opcode'), list(child))
             self.instructionOrder += 1
             self.instructionIndex += 1
 
@@ -1402,6 +1411,16 @@ class interpret:
     # Funkce obstarává zavolání pro každou instrukci zvlášť, opcode v xml buď odpovídá některé z povolených instrukcí nebo funkce skončí chybou.
     # Parametry: opcode a argumenty(args) pro danou instrukci.
     #
+    def executePreRunInstruction(self, opcode, args):
+        upperOpCode = opcode.upper()
+
+        if upperOpCode == 'LABEL':
+            self.labelIns(opcode, args)
+
+    #
+    # Funkce obstarává zavolání pro každou instrukci zvlášť, opcode v xml buď odpovídá některé z povolených instrukcí nebo funkce skončí chybou.
+    # Parametry: opcode a argumenty(args) pro danou instrukci.
+    #
     def executeInstruction(self, opcode, args):
         upperOpCode = opcode.upper()
 
@@ -1468,7 +1487,7 @@ class interpret:
         elif(upperOpCode == 'TYPE'):
             self.typeIns(opcode, args)
         elif(upperOpCode == 'LABEL'):
-            self.labelIns(opcode, args)
+            pass # pre run
         elif(upperOpCode == 'JUMP'):
             self.jumpIns(opcode, args)
         elif(upperOpCode == 'JUMPIFEQ'):
@@ -1493,8 +1512,6 @@ class interpret:
             count = self.getTotalCountOfInitializedVariables()
             if(count > self.statsParameters['--vars']):
                 self.statsParameters['--vars'] = count
-
-        return 0
 
     #
     # Vrátí celkový počet inicializovaných proměnných ze všech aktuálně existujících rámců
