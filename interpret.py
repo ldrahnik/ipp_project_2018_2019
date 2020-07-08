@@ -446,27 +446,16 @@ class interpret:
     #
     # Instruction DPRINT
     #
-    def dprintIns(self, opCode, args): # TODO:
+    def dprintIns(self, opCode, args):
 
         # ověření argumentů
         self.checkInstructionArgs(opCode, args, [self.TYPE_SYMB])
 
-        if(self.isValidVar(args[0]) == False):
-            if(self.getSymbType(args[0]) == 'bool'):
-                print(args[0].text, file=sys.stderr) # TODO: bool
-            else:
-                print(args[0].text, file=sys.stderr)
-        else:
-            if(self.getSymbType(args[0]) == 'GF'):
-                if(self.getSymbValue(args[0]) not in self.GF):
-                    self.error('Proměnná:' + self.getSymbValue(args[0]) + ' na GF neexistuje', 54)
-                if(self.GF.get(self.getSymbValue(args[0])).get("type") == "bool"):
-                    print(self.GF.get(self.getSymbValue(args[0])).get("value"), file=sys.stderr) # TODO: bool
-                else:
-                    print(self.GF.get(self.getSymbValue(args[0])).get("value"), file=sys.stderr)
-            else:
-                print(self.getSymbType(args[0]), file=sys.stderr)
-            # TODO: LF, TF
+        # value
+        value = self.getSymbolValue(args[0])
+
+        # vypsání hodnoty
+        print(value, file=sys.stderr)
 
     #
     # Instruction AND
