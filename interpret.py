@@ -332,7 +332,7 @@ class interpret:
         self.checkInstructionArgs(opCode, args, [self.TYPE_SYMB], [self.TYPE_INTEGER])
 
         try:
-            value = int(self.getSymbolValue(args[0])) # TODO: int konverze je zbytečná?
+            value = self.getSymbolValue(args[0])
             if value < 0 or value > 49:
                 raise ValueError
             sys.exit(value)
@@ -712,7 +712,7 @@ class interpret:
         self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_STRING, self.TYPE_INTEGER, self.TYPE_STRING])
 
         # získání pozice
-        position = int(self.getSymbolValue(args[1]))
+        position = self.getSymbolValue(args[1])
 
         # v řetězci
         text = self.getVariable(self.getVariableFrame(args[0]), self.getVariableName(args[0])).get('value')
@@ -867,7 +867,7 @@ class interpret:
         self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_STRING, self.TYPE_INTEGER])
 
         # získání pozice
-        position = int(self.getSymbolValue(args[2]))
+        position = self.getSymbolValue(args[2])
 
         # v textu
         text = self.getSymbolValue(args[1])
