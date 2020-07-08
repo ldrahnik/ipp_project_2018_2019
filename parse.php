@@ -374,7 +374,6 @@ class Parser {
             break;
           case "LABEL":
             $this->labelsCount++;
-            $this->insLabel($ins, $args);
             if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL))) != 0) {
                 return $ecode;
             }
