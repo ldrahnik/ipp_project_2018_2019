@@ -981,37 +981,47 @@ class interpret:
             self.TYPE_FLOAT
         )
 
-    def valueByType(self, value, type): # TODO: naimplementovat při ukládání proměnné
-
-        if(type == "string"):
+    #
+    # V případě chybného vstupu bude do proměnné hvar i uložena implicitní hodnota (dle typu 0, prázdný řetězec
+    # nebo false).
+    #
+    def getVariableValueByType(self, value, type):
+        if type == self.TYPE_STRING:
             try:
                 value = str(value)
             except (ValueError, TypeError):
                 value = ""
-        if(type == "int"):
+        if type == self.TYPE_INTEGER:
             try:
                 value = int(value)
             except (ValueError, TypeError):
                 value = 0
-        if(type == "bool"):
-            if(value.upper() == "TRUE"):
-                value = "true"
-            elif(value.upper() == "FALSE"):
-                value = "false"
+        if type == self.TYPE_BOOLEAN:
+            if value.upper() == "TRUE":
+                value = self.TYPE_BOOLEAN_TRUE
+            elif value.upper() == "FALSE":
+                value = self.TYPE_BOOLEAN_FALSE
             else:
-                value = "false"
+                value = self.TYPE_BOOLEAN_FALSE
 
         return value
+
+    def getTypeValue(self, typeObj):
+        return typeObj.text
 
     #
     # Instruction READ
     #
-    def readIns(self, opCode, args):  # TODO:
+    def readIns(self, opCode, args):
 
         # ověření argumentů
         self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_TYPE])
 
-        type = args[1].text
+        # type
+        type = self.getTypeValue(args[1])
+
+        # hodnota
+        value = None
 
         # v případě existujícího input souboru vezmeme z něj
         if(self.inputFile != None):
@@ -1019,14 +1029,15 @@ class interpret:
                 value = self.inputFile.readline().rstrip()
             except:
                 self.error('Nepodařilo se číst soubor pro čtení vstupu', 11)
+        # jinak čekáme na zadání od uživatele
         else:
             value = input()
 
-        # nastavení hodnoty
+        # nastavení proměnné
         self.setVariable(
             self.getVariableFrame(args[0]),
             self.getVariableName(args[0]),
-            value,
+            self.getVariableValueByType(value, type),
             type
         )
 
