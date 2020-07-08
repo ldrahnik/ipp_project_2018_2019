@@ -151,6 +151,7 @@ class interpret:
                 self.instructionIndex = self.jumpTo
                 self.instructionOrder = self.jumpTo + 1
                 self.jumpTo = None
+                continue
             elif(self.instructionIndex == len(root)):
                 if preRun:
                     preRun = False
@@ -238,41 +239,31 @@ class interpret:
             return False
         return True
 
-    def isValidBoolean(self, object):
-        if(object.get("type") != self.TYPE_BOOLEAN):
-            return False
-        if(re.match('^(' + self.TYPE_BOOLEAN_TRUE + '|' + self.TYPE_BOOLEAN_FALSE + ')$', object.text) != None):
+    def isValidBoolean(self, value):
+        if(re.match('^(' + self.TYPE_BOOLEAN_TRUE + '|' + self.TYPE_BOOLEAN_FALSE + ')$', str(value)) != None):
             return True
         return False
 
-    def isValidInteger(self, object):
-        if(object.get("type") != self.TYPE_INTEGER):
-            return False
-        if(re.match('^[-]?[0-9]*$', object.text) != None):
+    def isValidInteger(self, value):
+        if(re.match('^[-]?[0-9]*$', str(value)) != None):
             return True
         return False
 
-    def isValidString(self, object):
-        if(object.get("type") != self.TYPE_STRING):
-            return False
+    def isValidString(self, value):
         # Speciální výjimka pro prázdný strig.
-        if(not object.text or re.match('^.*$', object.text) != None):
+        if(not value or re.match('^.*$', str(value)) != None):
             return True
         return False
 
-    def isValidFloat(self, object):
-        if(object.get("type") != self.TYPE_FLOAT):
-            return False
+    def isValidFloat(self, value):
         try:
-            float(object.text)
+            float(value)
             return True
         except ValueError:
             return False
 
-    def isValidNil(self, object):
-        if(object.get("type") != self.TYPE_NIL):
-            return False
-        if(object.text != self.TYPE_NIL):
+    def isValidNil(self, value):
+        if(value != self.TYPE_NIL):
             return False
         return True
 
@@ -282,19 +273,19 @@ class interpret:
     def isValidConstant(self, object):
 
         # bool
-        if(object.get("type") == self.TYPE_BOOLEAN and self.isValidBoolean(object)):
+        if(object.get("type") == self.TYPE_BOOLEAN and self.isValidBoolean(object.text)):
             return True
 
         # integer
-        elif(object.get("type") == self.TYPE_INTEGER and self.isValidInteger(object)):
+        elif(object.get("type") == self.TYPE_INTEGER and self.isValidInteger(object.text)):
             return True
 
         # string 
-        elif(object.get("type") == self.TYPE_STRING and self.isValidString(object)):
+        elif(object.get("type") == self.TYPE_STRING and self.isValidString(object.text)):
             return True
 
         # float
-        elif(object.get("type") == self.TYPE_FLOAT and self.isValidFloat(object)):
+        elif(object.get("type") == self.TYPE_FLOAT and self.isValidFloat(object.text)):
             return True
 
         # nil
@@ -1040,7 +1031,10 @@ class interpret:
     # Funkce vrací hodnotu pro konstantu.
     #
     # Vstup: <arg1 type="string">světe</arg1>
+    #        <arg1 type="string"></arg1>
     def getConstantValue(self, constObject):
+        if(constObject.text == None):
+            return ""
         return constObject.text
     def getConstantType(self, constObject):
         return constObject.get('type')
@@ -1177,23 +1171,34 @@ class interpret:
 
         requiredArgsTypeCounter = 0
         for requiredArgType in requiredArgsType:
-             if(requiredArgType == self.TYPE_INTEGER):
-                if(not self.isValidInteger(argsObject[requiredArgsTypeCounter])):
-                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_INTEGER + ' není validní', 53)
-             elif(requiredArgType == self.TYPE_STRING):
-                if(not self.isValidString(argsObject[requiredArgsTypeCounter])):
-                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_STRING + ' není validní', 53)
-             elif(requiredArgType == self.TYPE_BOOLEAN):
-                if(not self.isValidBoolean(argsObject[requiredArgsTypeCounter])):
-                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_BOOLEAN + ' není validní', 53)
-             elif(requiredArgType == self.TYPE_FLOAT):
-                if(not self.isValidFloat(argsObject[requiredArgsTypeCounter])):
-                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_FLOAT + ' není validní', 53)
-             elif(requiredArgType == self.TYPE_NIL):
-                if(not self.isValidNil(argsObject[requiredArgsTypeCounter])):
-                    self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_NIL + ' není validní', 53)
 
-             requiredArgsTypeCounter+=1
+            value = None
+            if requiredArgs[requiredArgsTypeCounter] == self.TYPE_SYMB:
+               value = self.getSymbolValue(argsObject[requiredArgsTypeCounter])
+            elif requiredArgs[requiredArgsTypeCounter] == self.TYPE_VAR:
+                value = self.getVariable(
+                    self.getVariableFrame(argsObject[requiredArgsTypeCounter]),
+                    self.getVariableName(argsObject[requiredArgsTypeCounter])
+                ).get('value')
+
+            if value != None:
+                if(requiredArgType == self.TYPE_INTEGER):
+                    if(not self.isValidInteger(value)):
+                        self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_INTEGER + ' není validní', 53)
+                elif(requiredArgType == self.TYPE_STRING):
+                    if(not self.isValidString(value)):
+                        self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_STRING + ' není validní', 53)
+                elif(requiredArgType == self.TYPE_BOOLEAN):
+                    if(not self.isValidBoolean(value)):
+                        self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_BOOLEAN + ' není validní', 53)
+                elif(requiredArgType == self.TYPE_FLOAT):
+                    if(not self.isValidFloat(value)):
+                       self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_FLOAT + ' není validní', 53)
+                elif(requiredArgType == self.TYPE_NIL):
+                    if(not self.isValidNil(value)):
+                        self.error('Vyžadovaný argument ve funkci ' + opCode + ' na pozici ' + requiredArgsCounter + ' typu ' + self.TYPE_NIL + ' není validní', 53)
+
+            requiredArgsTypeCounter+=1
 
         return True
 

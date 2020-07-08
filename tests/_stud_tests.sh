@@ -85,6 +85,6 @@ function both() {
     interpret $TESTS_DIR $LOG_DIR $TEST_NAME $PIPE_FILE
 }
 
-for TEST_NAME in error_string_out_of_range read_test; do
+for TEST_NAME in error_string_out_of_range read_test simple_program; do
     both $BOTH_TASK_TESTS_DIR $BOTH_TASK_TESTS_LOG_DIR $TEST_NAME
 done

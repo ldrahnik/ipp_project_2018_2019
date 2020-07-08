@@ -92,11 +92,16 @@ cd ./tests/ && bash _stud_tests_diff.sh  /home/ldrahnik/projects/ipp_project_201
 *******TEST read_test PASSED
 ############### INTERPRET
 *******TEST read_test PASSED
+############### PARSER
+*******TEST simple_program PASSED
+############### INTERPRET
+*******TEST simple_program PASSED
 # úklid
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/jexamxml_tmp
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/*
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/*
-rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/log/*
+#rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/log/*
+
 ```
 
 ## Odevzdané soubory:

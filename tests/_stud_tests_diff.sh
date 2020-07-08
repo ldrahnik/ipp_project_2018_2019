@@ -36,7 +36,7 @@ function parse() {
     fi
 
     # Zkontrolujeme návratovou hodnotu.
-    if diff "$LOG_DIR$TEST_NAME.rc" "$REF_LOG_DIR$TEST_NAME.rc"; then
+    if diff --ignore-all-space "$LOG_DIR$TEST_NAME.rc" "$REF_LOG_DIR$TEST_NAME.rc"; then
 
         # Pokud je návratová hodnota "0", zkontrolujeme i výstup.
         if [[ $(head -n 1 "$REF_LOG_DIR$TEST_NAME.rc") == "0" ]]; then
@@ -73,7 +73,7 @@ function interpret() {
     TEST_NAME=$3
 
     # Zkontrolujeme návratovou hodnotu.
-    if diff "$LOG_DIR$TEST_NAME.rc" "$REF_LOG_DIR$TEST_NAME.rc"; then
+    if diff --ignore-all-space "$LOG_DIR$TEST_NAME.rc" "$REF_LOG_DIR$TEST_NAME.rc"; then
 
         # Pokud je návratová hodnota "0", zkontrolujeme i výstup.
         if [[ $(head -n 1 "$REF_LOG_DIR$TEST_NAME.rc") == "0" ]]; then
@@ -121,6 +121,6 @@ done
 
 echo "############################### BOTH"
 
-for TEST_NAME in error_string_out_of_range read_test; do
+for TEST_NAME in error_string_out_of_range read_test simple_program; do
     both $BOTH_LOG_DIR $BOTH_REF_DIR $TEST_NAME
 done
