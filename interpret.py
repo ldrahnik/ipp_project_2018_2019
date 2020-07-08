@@ -572,7 +572,7 @@ class interpret:
     def jumpifeqIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL, self.TYPE_SYMB, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_BOOLEAN, self.TYPE_BOOLEAN])
 
         # type1
         type1 = self.getSymbolType(args[1])
@@ -600,7 +600,7 @@ class interpret:
     def jumpifneqIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL, self.TYPE_SYMB, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_UNSPEC, self.TYPE_BOOLEAN, self.TYPE_BOOLEAN])
 
         # type1
         type1 = self.getSymbolType(args[1])
