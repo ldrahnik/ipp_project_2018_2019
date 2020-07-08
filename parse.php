@@ -383,6 +383,7 @@ class Parser {
             if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL))) != 0) {
                 return $ecode;
             }
+            break;
           case "JUMPIFEQ":
           case "JUMPIFNEQ":
             $this->jumpsCount++;
