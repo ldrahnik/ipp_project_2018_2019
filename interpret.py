@@ -302,6 +302,23 @@ class interpret:
         return self.isValidVariable(object) or self.isValidConstant(object)
 
     #
+    # Nahradí escape sequence označené dekadickým kódem.
+    #
+    # Vstup: string@řetězec\032s\032lomítkem\032\092\032a\010novým\035řádkem
+    # Výstup: řetězec s lomítkem \ a
+    # novým#řádkem
+    def replaceEscapeDecadicSequences(self, value):
+
+        def replace(match):
+            return chr(int(match.group(1)))
+
+        aux = str(value)
+        regex = re.compile(r"\\(\d{1,3})")
+        result = regex.sub(replace, aux)
+
+        return result
+
+    #
     # Instruction WRITE
     #
     def writeIns(self, opCode, args):
@@ -312,16 +329,11 @@ class interpret:
         # získání hodnoty
         value = self.getSymbolValue(args[0])
 
-        # nahrazení escapovaných hodnot
-        def replace(match):  # TODO: refactor
-            return chr(int(match.group(1)))
+        # nahrazení eskape sekvencí
+        value = self.replaceEscapeDecadicSequences(value)
 
-        aux = str(value)
-        regex = re.compile(r"\\(\d{1,3})")
-        printValue = regex.sub(replace, aux)
-
-        # tisknutí
-        print(printValue, end="")
+        # tisknutí hodnoty
+        print(value, end="")
 
     #
     # Instruction EXIT
