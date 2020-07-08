@@ -259,7 +259,7 @@ class interpret:
     def isValidNil(self, object):
         if(object.get("type") != self.TYPE_NIL):
             return False
-        if(object.text != self.TYPE_NIL)
+        if(object.text != self.TYPE_NIL):
             return False
         return True
 
