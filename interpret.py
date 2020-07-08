@@ -55,12 +55,25 @@ class interpret:
     TYPE_TYPE = 'type'
     TYPE_UNSPEC = 'TYPE_UNSPEC'
 
+    #
+    # Zásobník volání
+    #
+    callStack = []
 
     jumpTo = None
     inputFile = None
     labels = {}
+
+    #
+    # Instruction order
+    # <instruction order="5" opcode="XY">
+    #
     instructionOrder = 1
 
+    #
+    # Index of line contains instruction of program
+    #
+    instructionIndex = 0
 
     #
     # Parametry pro sbírání statistik interpretace kódu. (může být --insts a --vars)
@@ -130,19 +143,18 @@ class interpret:
                 self.error('Nepodařilo se otevřít soubor pro čtení vstupu: ' + opts.input,11)
 
         # procházení všech instrukcí
-        index = 0
-        while index <= len(root):
+        while self.instructionIndex <= len(root):
 
             # nějaká instrukce chtěla skočit
             if(self.jumpTo != None):
-                index = self.jumpTo
+                self.instructionIndex = self.jumpTo
                 self.instructionOrder = self.jumpTo + 1
                 self.jumpTo = None
-            elif(index == len(root)):
+            elif(self.instructionIndex == len(root)):
                 break
 
             # čti instrukci
-            child = root[index]
+            child = root[self.instructionIndex]
 
             if(int(child.get('order')) != self.instructionOrder):
                 self.error('Číslování instrukcí není inkrementální po 1, číslo instrukce: ' + child.get('order') + ' by mělo být: ' + str(self.instructionOrder), 31)
@@ -165,8 +177,8 @@ class interpret:
 
             # vykonání konkrétní instrukce (zatím nevíme, jestli taková vůbec existuje, zkontrolovali jsme pouze formální stránku XML)
             self.executeInstruction(child.get('opcode'), list(child))
-            self.instructionOrder+=1
-            index += 1
+            self.instructionOrder += 1
+            self.instructionIndex += 1
 
         # interpret proběhl bez chyby, uložíme statistiky do souboru dle pořadí pokud je rozšíření aktivováno
         if(opts.stats != None):
@@ -191,18 +203,10 @@ class interpret:
     #
     # Funkce slouží pro validování názvu pro návěští.
     #
-    def isValidLabelName(self, arg):
+    def isValidLabel(self, arg):
         if(arg.get("type") != self.TYPE_LABEL):
             return False
         if(re.match('[a-zA-Z0-9_\-$&%*]+$', arg.text) == None):
-            return False
-        return True
-
-    #
-    # Funkce slouží pro validování návěští, zda již náhodou neexistuje stejného názvu.
-    #
-    def isValidLabel(self, arg):
-        if(self.labels.get(arg.text, None) == None):
             return False
         return True
 
@@ -525,13 +529,16 @@ class interpret:
             self.TYPE_BOOLEAN
         )
 
-    def getLabel(self, label):
+    def getLabel(self, labelObject):
+
+        # value
+        value = self.getLabelValue(labelObject)
 
         # existuje návěští?
-        if label in self.labels:
+        if not value in self.labels:
             self.error('Neexistující návěští', 52)
 
-        return self.labels[label]
+        return self.labels[value]
 
     def setLabel(self, labelObj):
 
@@ -1365,17 +1372,48 @@ class interpret:
         )
 
     #
+    # Instruction CALL
+    #
+    def callIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL])
+
+        # uloží inkrementovanou aktuální pozici z interního čítače instrukcí do zásobníku volání
+        nextInstructionIndex = self.instructionIndex + 1
+        self.callStack.append(nextInstructionIndex)
+
+        # provede skok na zadané návěští
+        self.jumpTo = self.getLabel(args[0])
+
+    #
+    # Instruction RETURN
+    #
+    def returnIns(self, opCode, args):
+
+        # ověření argumentů
+        self.checkInstructionArgs(opCode, args, [])
+
+        # vyjme pozici ze zásobníku volání
+        value = self.callStack.pop()
+
+        # skočí na tuto pozici nastavením interního čítače instrukcí
+        self.jumpTo = value
+
+    #
     # Funkce obstarává zavolání pro každou instrukci zvlášť, opcode v xml buď odpovídá některé z povolených instrukcí nebo funkce skončí chybou.
     # Parametry: opcode a argumenty(args) pro danou instrukci.
     #
     def executeInstruction(self, opcode, args):
         upperOpCode = opcode.upper()
 
-        #'RETURN':  # TODO:
-        #'CALL':  # TODO:
-        if(upperOpCode == 'MOVE'):
+        if(upperOpCode == 'CALL'):
+            self.callIns(opcode, args)
+        elif(upperOpCode == 'RETURN'):
+            self.returnIns(opcode, args)
+        elif(upperOpCode == 'MOVE'):
             self.moveIns(opcode, args)
-        if(upperOpCode == 'CREATEFRAME'):
+        elif(upperOpCode == 'CREATEFRAME'):
             self.createFrameIns(opcode, args)
         elif(upperOpCode == 'PUSHFRAME'):
             self.pushFrameIns(opcode, args)
