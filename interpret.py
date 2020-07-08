@@ -985,31 +985,6 @@ class interpret:
             self.TYPE_FLOAT
         )
 
-    #
-    # V případě chybného vstupu bude do proměnné hvar i uložena implicitní hodnota (dle typu 0, prázdný řetězec
-    # nebo false).
-    #
-    def getVariableValueByType(self, value, type):
-        if type == self.TYPE_STRING:
-            try:
-                value = str(value)
-            except (ValueError, TypeError):
-                value = ""
-        if type == self.TYPE_INTEGER:
-            try:
-                value = int(value)
-            except (ValueError, TypeError):
-                value = 0
-        if type == self.TYPE_BOOLEAN:
-            if value.upper() == "TRUE":
-                value = self.TYPE_BOOLEAN_TRUE
-            elif value.upper() == "FALSE":
-                value = self.TYPE_BOOLEAN_FALSE
-            else:
-                value = self.TYPE_BOOLEAN_FALSE
-
-        return value
-
     def getTypeValue(self, typeObj):
         return typeObj.text
 
@@ -1041,7 +1016,7 @@ class interpret:
         self.setVariable(
             self.getVariableFrame(args[0]),
             self.getVariableName(args[0]),
-            self.getVariableValueByType(value, type),
+            self.getInitialVariableValueByType(value, type),
             type
         )
 
@@ -1071,7 +1046,7 @@ class interpret:
 
         # symbol je konstanta
         elif(self.isValidConstant(symbObject)):
-          return self.getConstantValue(symbObject)
+          return self.getValueByType(self.getConstantValue(symbObject), self.getConstantType(symbObject))
 
     def getSymbolType(self, symbObject):
 
@@ -1133,7 +1108,48 @@ class interpret:
             return self.TYPE_STRING
         elif(self.isValidVariable(object)):
             return self.TYPE_VAR
+        elif(self.isValidNil(object)):
+            return self.TYPE_NIL
 
+    #
+    # V případě chybného vstupu bude do proměnné uložena implicitní hodnota (dle typu 0, prázdný řetězec nebo false).
+    #
+    def getInitialVariableValueByType(self, value, type):
+        if type == self.TYPE_STRING:
+            try:
+                value = str(value)
+            except (ValueError, TypeError):
+                value = ""
+        if type == self.TYPE_INTEGER:
+            try:
+                value = int(value)
+            except (ValueError, TypeError):
+                value = 0
+        if type == self.TYPE_BOOLEAN:
+            if value.upper() == self.TYPE_BOOLEAN_TRUE.upper():
+                value = self.TYPE_BOOLEAN_TRUE
+            elif value.upper() == self.TYPE_BOOLEAN_FALSE.upper():
+                value = self.TYPE_BOOLEAN_FALSE
+            else:
+                value = self.TYPE_BOOLEAN_FALSE
+
+        return value
+
+    #
+    # V případě chybného vstupu bude do proměnné hvar i uložena implicitní hodnota (dle typu 0, prázdný řetězec
+    # nebo false).
+    #
+    def getValueByType(self, value, type):
+        if type == self.TYPE_STRING:
+            return str(value)
+        elif type == self.TYPE_INTEGER:
+            return int(value)
+        elif type == self.TYPE_BOOLEAN:
+            return str(value)
+        elif type == self.TYPE_NIL:
+            return str(value)
+
+        return value
 
     #
     # Funkce kontroluje argumenty instrukce.
@@ -1234,6 +1250,9 @@ class interpret:
     # V případě varValue None nebo varType None se jedná o deklaraci
     #
     def setVariable(self, varFrame, varName, varValue, varType):
+
+        # konverze na typ
+        varValue = self.getValueByType(varValue, varType)
 
         # globální rámec
         if(varFrame == self.FRAME_GLOBAL):
