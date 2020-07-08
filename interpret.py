@@ -574,33 +574,25 @@ class interpret:
         # ověření argumentů
         self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL, self.TYPE_SYMB, self.TYPE_SYMB])
 
-        # zjisti type1, value1
-        type1 = None
-        value1 = None
-        if(self.isValidVar(args[1]) == True):
-            type1 = self.GF.get(self.getSymbValue(args[1])).get('type')
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            type1 = args[2].get("type")
-            value1 = args[2].text
+        # type1
+        type1 = self.getSymbolType(args[1])
 
-        # zjistit type2, value2
-        type2 = None
-        value2 = None
-        if(self.isValidVar(args[2]) == True):
-            type2 = self.GF.get(self.getSymbValue(args[2])).get('type')
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            type2 = args[2].get("type")
-            value2 = args[2].text
+        # type2
+        type2 = self.getSymbolType(args[2])
 
-        # porovnej type1, type2 (53)
-        if(type1 != type2):
+        # porovnání typů
+        if type1 != type2:
             self.error('Typy se musejí rovnat', 53)
 
-        # porovnej value1, value2
-        if(str(value1) == str(value2)):
-            self.jumpTo = self.labels[args[0].text]
+        # value1
+        value1 = self.getSymbolValue(args[1])
+
+        # value2
+        value2 = self.getSymbolValue(args[2])
+
+        # porovnání hodnot
+        if value1 == value2:
+            self.jumpTo = self.getLabel(args[0])
 
     #
     # Instruction JUMPIFNEQ
