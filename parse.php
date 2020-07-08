@@ -387,7 +387,7 @@ class Parser {
           case "JUMPIFEQ":
           case "JUMPIFNEQ":
             $this->jumpsCount++;
-            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB))) != 0) {
+            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB))) != 0) {
                 return $ecode;
             }
             break;
