@@ -1584,7 +1584,7 @@ class interpret:
         # alespoň jeden z parametrů (--source nebo --input) musí být vždy zadán
         # pokud jeden z nich chybí, tak jsou odpovídající data načítána ze standardního vstupu.
         if(opts.source == None and opts.input == None):
-            self.error('Alespoň jeden z parametrů (--source nebo --input) musí být vždy zadán', 10);
+            self.error('Alespoň jeden z parametrů (--source nebo --input) musí být vždy zadán', 10)
 
         # chybí-li při zadání --stats --insts či --vars parametr, jedná se o chybu 10
         if opts.stats != None and opts.insts == None and opts.vars == None:
