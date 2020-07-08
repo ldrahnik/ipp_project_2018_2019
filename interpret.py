@@ -1256,7 +1256,7 @@ class interpret:
     # Nastavuje hodnotu a typ proměnné dle uvedeného rámce.
     # V případě varValue None nebo varType None se jedná o deklaraci
     #
-    def setVariable(self, varFrame, varName, varValue, varType):
+    def setVariable(self, varFrame, varName, varValue = None, varType = None):
 
         # konverze na typ
         varValue = self.getValueByType(varValue, varType)
@@ -1366,9 +1366,7 @@ class interpret:
         # nastav (bez určení typu a hodnoty)
         self.setVariable(
             self.getVariableFrame(args[0]),
-            self.getVariableName(args[0]),
-            None,
-            None
+            self.getVariableName(args[0])
         )
 
     #
