@@ -524,6 +524,18 @@ class interpret:
             self.TYPE_BOOLEAN
         )
 
+    def setLabel(self, labelObj):
+
+        # label
+        label = self.getLabelValue(labelObj)
+
+        # existuje návěští?
+        if label in self.labels:
+            self.error('Pokus o redefinici existujícího návěští', 52)
+
+        # uložení
+        self.labels[label] = self.instructionOrder
+
     #
     # Instruction LABEL
     #
@@ -532,7 +544,8 @@ class interpret:
         # ověření argumentů
         self.checkInstructionArgs(opCode, args, [self.TYPE_LABEL])
 
-        self.labels[self.getLabelValue(args[0])] = self.instructionOrder
+        # uložení
+        self.setLabel(args[0])
 
     #
     # Instruction JUMP
