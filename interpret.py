@@ -749,123 +749,126 @@ class interpret:
     #
     # Instruction LT
     #
-    def ltIns(self, opCode, args):  # TODO:
+    def ltIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_BOOLEAN, self.TYPE_UNSPEC, self.TYPE_UNSPEC])
 
-        # zjisti type1, value1
-        type1 = None
-        value1 = None
-        if(self.isValidVar(args[1]) == True):
-            type1 = self.GF.get(self.getSymbValue(args[1])).get('type')
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            type1 = args[1].get("type")
-            value1 = args[1].text
+        # type1
+        type1 = self.getSymbolType(args[1])
 
-        # zjistit type2, value2
-        type2 = None
-        value2 = None
-        if(self.isValidVar(args[2]) == True):
-            type2 = self.GF.get(self.getSymbValue(args[2])).get('type')
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            type2 = args[2].get("type")
-            value2 = args[2].text
+        # type2
+        type2 = self.getSymbolType(args[2])
 
-        # porovnej type1, type2 (53)
-        if(type1 != type2):
+        # porovnání typů
+        if type1 != type2:
             self.error('Typy se musejí rovnat', 53)
 
-        # porovnej value1, value2
-        if(str(value1) < str(value2)):
-            result = "true"
-        else:
-            result = "false"
+        # dodatečná kontrola typů
+        if type1 == self.TYPE_NIL or type2 == self.TYPE_NIL:
+            self.error('S operandem typu ' + self.TYPE_NIL + ' lze porovnávat pouze instrukcí EQ', 53)
 
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "bool"}
+        # value1
+        value1 = self.getSymbolValue(args[1])
+
+        # value2
+        value2 = self.getSymbolValue(args[2])
+
+        # porovnání hodnot
+        if str(value1) < str(value2):
+            result = self.TYPE_BOOLEAN_TRUE
+        else:
+            result = self.TYPE_BOOLEAN_FALSE
+
+        # uložení výsledku
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_BOOLEAN
+        )
 
 
     #
     # Instruction EQ
     #
-    def eqIns(self, opCode, args):  # TODO:
+    def eqIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_BOOLEAN, self.TYPE_UNSPEC, self.TYPE_UNSPEC])
 
-        # zjisti type1, value1
-        type1 = None
-        value1 = None
-        if(self.isValidVar(args[1]) == True):
-            type1 = self.GF.get(self.getSymbValue(args[1])).get('type')
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            type1 = args[1].get("type")
-            value1 = args[1].text
+        # type1
+        type1 = self.getSymbolType(args[1])
 
-        # zjistit type2, value2
-        type2 = None
-        value2 = None
-        if(self.isValidVar(args[2]) == True):
-            type2 = self.GF.get(self.getSymbValue(args[2])).get('type')
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            type2 = args[2].get("type")
-            value2 = args[2].text
+        # type2
+        type2 = self.getSymbolType(args[2])
 
-        # porovnej type1, type2 (53)
-        if(type1 != type2):
+        # porovnání typů
+        if type1 != type2:
             self.error('Typy se musejí rovnat', 53)
 
-        # porovnej value1, value2
-        if(str(value1) == str(value2)):
-            result = "true"
-        else:
-            result = "false"
+        # value1
+        value1 = self.getSymbolValue(args[1])
 
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "bool"}
+        # value2
+        value2 = self.getSymbolValue(args[2])
+
+        # porovnání hodnot
+        if str(value1) == str(value2):
+            result = self.TYPE_BOOLEAN_TRUE
+        else:
+            result = self.TYPE_BOOLEAN_FALSE
+
+        # uložení výsledku
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_BOOLEAN
+        )
 
     #
     # Instruction GT
     #
-    def gtIns(self, opCode, args):  # TODO:
+    def gtIns(self, opCode, args):
 
         # ověření argumentů
-        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_VAR, self.TYPE_SYMB])
+        self.checkInstructionArgs(opCode, args, [self.TYPE_VAR, self.TYPE_SYMB, self.TYPE_SYMB], [self.TYPE_BOOLEAN, self.TYPE_UNSPEC, self.TYPE_UNSPEC])
 
-        # zjisti type1, value1
-        type1 = None
-        value1 = None
-        if(self.isValidVar(args[1]) == True):
-            type1 = self.GF.get(self.getSymbValue(args[1])).get('type')
-            value1 = self.GF.get(self.getSymbValue(args[1])).get('value')
-        else:
-            type1 = args[1].get("type")
-            value1 = args[1].text
+        # type1
+        type1 = self.getSymbolType(args[1])
 
-        # zjistit type2, value2
-        type2 = None
-        value2 = None
-        if(self.isValidVar(args[2]) == True):
-            type2 = self.GF.get(self.getSymbValue(args[2])).get('type')
-            value2 = self.GF.get(self.getSymbValue(args[2])).get('value')
-        else:
-            type2 = args[2].get("type")
-            value2 = args[2].text
+        # type2
+        type2 = self.getSymbolType(args[2])
 
-        # porovnej type1, type2 (53)
-        if(type1 != type2):
+        # porovnání typů
+        if type1 != type2:
             self.error('Typy se musejí rovnat', 53)
 
-        # porovnej value1, value2
-        if(str(value1) > str(value2)):
-            result = "true"
-        else:
-            result = "false"
+        # dodatečná kontrola typů
+        if type1 == self.TYPE_NIL or type2 == self.TYPE_NIL:
+            self.error('S operandem typu ' + self.TYPE_NIL + ' lze porovnávat pouze instrukcí EQ', 53)
 
-        self.GF[self.getSymbValue(args[0])] = {"value": result, "type": "bool"}
+        # value1
+        value1 = self.getSymbolValue(args[1])
+
+        # value2
+        value2 = self.getSymbolValue(args[2])
+
+        # porovnání hodnot
+        if str(value1) > str(value2):
+            result = self.TYPE_BOOLEAN_TRUE
+        else:
+            result = self.TYPE_BOOLEAN_FALSE
+
+        # uložení výsledku
+        self.setVariable(
+            self.getVariableFrame(args[0]),
+            self.getVariableName(args[0]),
+            result,
+            self.TYPE_BOOLEAN
+        )
+
     #
     # Instruction GETCHAR
     #
