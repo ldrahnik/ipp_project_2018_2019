@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="IPPcode19">
+ <instruction order="1" opcode="DEFVAR">
+  <arg1 type="var">GF@a</arg1>
+ </instruction>
+ <instruction order="2" opcode="DEFVAR">
+  <arg1 type="var">GF@while</arg1>
+ </instruction>
+ <instruction order="3" opcode="MOVE">
+  <arg1 type="var">GF@while</arg1>
+  <arg2 type="bool">false</arg2>
+ </instruction>
+ <instruction order="4" opcode="CALL">
+  <arg1 type="label">skip</arg1>
+ </instruction>
+ <instruction order="5" opcode="MOVE">
+  <arg1 type="var">GF@while</arg1>
+  <arg2 type="bool">true</arg2>
+ </instruction>
+ <instruction order="6" opcode="LABEL">
+  <arg1 type="label">skip</arg1>
+ </instruction>
+ <instruction order="7" opcode="WRITE">
+  <arg1 type="string">\032&amp;lt;not-tag/&amp;gt;\032</arg1>
+ </instruction>
+ <instruction order="8" opcode="JUMPIFEQ">
+  <arg1 type="label">end</arg1>
+  <arg2 type="var">GF@while</arg2>
+  <arg3 type="bool">true</arg3>
+ </instruction>
+ <instruction order="9" opcode="RETURN"/>
+ <instruction order="10" opcode="LABEL">
+  <arg1 type="label">end</arg1>
+ </instruction>
+</program>  

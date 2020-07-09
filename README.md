@@ -100,6 +100,10 @@ cd ./tests/ && bash _stud_tests_diff.sh  /home/ldrahnik/projects/ipp_project_201
 *******TEST float PASSED
 ############### INTERPRET
 *******TEST float PASSED
+############### PARSER
+*******TEST call_stack PASSED
+############### INTERPRET
+*******TEST call_stack PASSED
 # úklid
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/jexamxml_tmp
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/*

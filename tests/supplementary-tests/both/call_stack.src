@@ -1,0 +1,11 @@
+.IPPcode19
+DEFVAR GF@a
+DEFVAR GF@while
+MOVE GF@while bool@false
+CALL skip
+MOVE GF@while bool@true
+LABEL skip
+WRITE string@\032&lt;not-tag/&gt;\032
+JUMPIFEQ end GF@while bool@true
+RETURN
+LABEL end
