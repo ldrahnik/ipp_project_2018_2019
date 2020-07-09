@@ -34,7 +34,7 @@ class Parser {
   // vypíše do statistik počet instrukcí pro podmíněné a nepodmíněné skoky dohromady
   private $jumpsCount = 0;
 
-  private $instructios = array();
+  private $instructions = array();
 
   // typy argumentů u funkce
   const INS_ARG_TYPE = 'type';
