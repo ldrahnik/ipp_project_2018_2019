@@ -255,12 +255,19 @@ class interpret:
             return True
         return False
 
-    def isValidFloat(self, value):
+    def getFloatValueFromString(self, value):
         try:
-            float(value)
-            return True
+            return float(value)
         except ValueError:
-            return False
+            try:
+                return float.fromhex(value)
+            except ValueError:
+                return None
+
+    def isValidFloat(self, value):
+        if self.getFloatValueFromString(value) != None:
+            return True
+        return False
 
     def isValidNil(self, value):
         if(value != self.TYPE_NIL):
@@ -295,7 +302,7 @@ class interpret:
         return False
 
     def isValidType(self, object):
-        if(re.match('^(' + self.TYPE_STRING + '|' + self.TYPE_INTEGER + '|' + self.TYPE_BOOLEAN + '|' + self.TYPE_FLOAT + self.TYPE_NIL + '){1}$', object.text) != None):
+        if(re.match('^(' + self.TYPE_STRING + '|' + self.TYPE_INTEGER + '|' + self.TYPE_BOOLEAN + '|' + self.TYPE_FLOAT + '|' + self.TYPE_NIL + '){1}$', object.text) != None):
             return True
         return False
 
@@ -334,7 +341,8 @@ class interpret:
         value = self.getSymbolValue(args[0])
 
         # nahrazení eskape sekvencí
-        value = self.replaceEscapeDecadicSequences(value)
+        if self.getSymbolType(args[0]) == self.TYPE_STRING:
+            value = self.replaceEscapeDecadicSequences(value)
 
         # tisknutí hodnoty
         print(value, end="")
@@ -1111,21 +1119,27 @@ class interpret:
     def getInitialVariableValueByType(self, value, type):
         if type == self.TYPE_STRING:
             try:
-                value = str(value)
+                return str(value)
             except (ValueError, TypeError):
-                value = ""
+                return ""
         if type == self.TYPE_INTEGER:
             try:
-                value = int(value)
+                return int(value)
             except (ValueError, TypeError):
-                value = 0
+                return 0
+        if type == self.TYPE_FLOAT:
+            floatValue = self.getFloatValueFromString(value)
+            if floatValue != None:
+                return floatValue
+            else:
+                return 0
         if type == self.TYPE_BOOLEAN:
             if value.upper() == self.TYPE_BOOLEAN_TRUE.upper():
-                value = self.TYPE_BOOLEAN_TRUE
+                return self.TYPE_BOOLEAN_TRUE
             elif value.upper() == self.TYPE_BOOLEAN_FALSE.upper():
-                value = self.TYPE_BOOLEAN_FALSE
+                return self.TYPE_BOOLEAN_FALSE
             else:
-                value = self.TYPE_BOOLEAN_FALSE
+                return self.TYPE_BOOLEAN_FALSE
 
         return value
 
@@ -1142,6 +1156,8 @@ class interpret:
             return str(value)
         elif type == self.TYPE_NIL:
             return str(value)
+        elif type == self.TYPE_FLOAT:
+            return self.getFloatValueFromString(value)
 
         return value
 

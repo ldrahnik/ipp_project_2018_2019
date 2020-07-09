@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="IPPcode19">
+ <instruction order="1" opcode="DEFVAR">
+  <arg1 type="var">GF@float</arg1>
+ </instruction>
+ <instruction order="2" opcode="MOVE">
+  <arg1 type="var">GF@float</arg1>
+  <arg2 type="float">0x1.2000000000000p+0</arg2>
+ </instruction>
+ <instruction order="3" opcode="WRITE">
+  <arg1 type="var">GF@float</arg1>
+ </instruction>
+ <instruction order="4" opcode="READ">
+  <arg1 type="var">GF@float</arg1>
+  <arg2 type="type">float</arg2>
+ </instruction>
+ <instruction order="5" opcode="DEFVAR">
+  <arg1 type="var">GF@int</arg1>
+ </instruction>
+ <instruction order="6" opcode="FLOAT2INT">
+  <arg1 type="var">GF@int</arg1>
+  <arg2 type="var">GF@float</arg2>
+ </instruction>
+ <instruction order="7" opcode="WRITE">
+  <arg1 type="var">GF@int</arg1>
+ </instruction>
+ <instruction order="8" opcode="INT2FLOAT">
+  <arg1 type="var">GF@float</arg1>
+  <arg2 type="var">GF@int</arg2>
+ </instruction>
+ <instruction order="9" opcode="WRITE">
+  <arg1 type="var">GF@float</arg1>
+ </instruction>
+</program>

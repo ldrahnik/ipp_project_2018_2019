@@ -1,0 +1,10 @@
+.IPPcode19
+DEFVAR GF@float
+MOVE GF@float float@0x1.2000000000000p+0
+WRITE GF@float
+READ GF@float float
+DEFVAR GF@int
+FLOAT2INT GF@int GF@float
+WRITE GF@int
+INT2FLOAT GF@float GF@int
+WRITE GF@float

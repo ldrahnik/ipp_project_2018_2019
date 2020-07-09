@@ -155,6 +155,10 @@ class Parser {
     if(preg_match('/^int@[-]?[0-9]*$/', $name)) {
       $int = true;
     }
+    $float = false;
+    if(preg_match('/^float@.*$/', $name)) {
+      $float = true;
+    }
     $string = false;
     if(preg_match('/^string@.*$/', $name)) {
       $string = true;
@@ -164,7 +168,7 @@ class Parser {
       $nil = true;
     }
 
-    if($string || $int || $bool || $nil) {
+    if($float || $string || $int || $bool || $nil) {
       return true;
     }
 
@@ -221,7 +225,7 @@ class Parser {
    * Funkce kontroluje, zda je zadaný type symbolu správný, jestliže platí Type ∈ {int, string, bool} vrací true, pakliže ne, false.
    */
   function isCorrectTypeName($name) {
-    return ($name == 'bool' || $name == 'string' || $name == 'int' || $name == 'nil');
+    return ($name == 'bool' || $name == 'string' || $name == 'int' || $name == 'float' || $name == 'nil');
   }
 
   /**
@@ -310,6 +314,8 @@ class Parser {
         switch($ins) {
           case "MOVE":
           case "INT2TOCHAR":
+          case "FLOAT2INT":
+          case "INT2FLOAT":
           case "NOT":
             if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB))) != 0) {
                 return $ecode;

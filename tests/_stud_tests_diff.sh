@@ -121,6 +121,6 @@ done
 
 echo "############################### BOTH"
 
-for TEST_NAME in error_string_out_of_range read_test simple_program; do
+for TEST_NAME in error_string_out_of_range read_test simple_program float; do
     both $BOTH_LOG_DIR $BOTH_REF_DIR $TEST_NAME
 done
