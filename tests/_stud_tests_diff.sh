@@ -36,7 +36,7 @@ function parse() {
     fi
 
     # Zkontrolujeme návratovou hodnotu.
-    if diff --ignore-all-space "$LOG_DIR$TEST_NAME.rc" "$REF_LOG_DIR$TEST_NAME.rc"; then
+    if diff "$LOG_DIR$TEST_NAME.rc" "$REF_LOG_DIR$TEST_NAME.rc"; then
 
         # Pokud je návratová hodnota "0", zkontrolujeme i výstup.
         if [[ $(head -n 1 "$REF_LOG_DIR$TEST_NAME.rc") == "0" ]]; then
@@ -73,7 +73,7 @@ function interpret() {
     TEST_NAME=$3
 
     # Zkontrolujeme návratovou hodnotu.
-    if diff --ignore-all-space "$LOG_DIR$TEST_NAME.rc" "$REF_LOG_DIR$TEST_NAME.rc"; then
+    if diff "$LOG_DIR$TEST_NAME.rc" "$REF_LOG_DIR$TEST_NAME.rc"; then
 
         # Pokud je návratová hodnota "0", zkontrolujeme i výstup.
         if [[ $(head -n 1 "$REF_LOG_DIR$TEST_NAME.rc") == "0" ]]; then
