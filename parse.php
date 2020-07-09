@@ -461,8 +461,6 @@ class Parser {
         default:
           // interní chyba při volání funkce
           return 1;
-
-        $argsCounter++;
       }
     }
 
