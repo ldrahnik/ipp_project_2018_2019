@@ -336,6 +336,7 @@ class Parser {
                 return $ecode;
             }
             break;
+          case "JUMP":
           case "CALL":
             $this->jumpsCount++;
             if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL))) != 0) {
@@ -363,6 +364,8 @@ class Parser {
           case "CONCAT":
           case "GETCHAR":
           case "SETCHAR":
+          case "STRLEN":
+          case "TYPE":
             if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB))) != 0) {
                 return $ecode;
             }
@@ -372,20 +375,8 @@ class Parser {
                 return $ecode;
             }
             break;
-          case "STRLEN":
-          case "TYPE":
-            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_VAR, Parser::INS_ARG_SYMB, Parser::INS_ARG_SYMB))) != 0) {
-                return $ecode;
-            }
-            break;
           case "LABEL":
             $this->labelsCount++;
-            if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL))) != 0) {
-                return $ecode;
-            }
-            break;
-          case "JUMP":
-            $this->jumpsCount++;
             if(($ecode = $this->ins($ins, $args, array(Parser::INS_ARG_LABEL))) != 0) {
                 return $ecode;
             }
