@@ -538,14 +538,14 @@ class Parser {
     $xml->startElement($this->xmlRootName);
     $xml->writeAttribute('language', $this->language);
 
-    foreach($this->instructions as $order => $instruction) {
+    foreach($this->instructions as $insOrder => $instruction) {
       $xml->startElement('instruction');
-      $xml->writeAttribute('order', $order);
+      $xml->writeAttribute('order', $insOrder);
       $xml->writeAttribute('opcode', $instruction['opcode']);
 
       if(isset($instruction['args'])) {
-        foreach($instruction['args'] as $order => $arg) {
-          $xml->startElement('arg' . $order);
+        foreach($instruction['args'] as $argOrder => $arg) {
+          $xml->startElement('arg' . $argOrder);
           $xml->writeAttribute('type', $arg['type']);
           $xml->writeRaw($arg['value']);
           $xml->endElement();
