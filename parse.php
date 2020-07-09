@@ -85,10 +85,7 @@ class Parser {
       }
     }
 
-    $result = $this->writeXml();
-    if($result != 0) {
-      return $result;
-    }
+    $this->writeXml();
 
     return 0;
   }
