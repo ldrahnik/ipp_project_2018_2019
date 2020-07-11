@@ -13,14 +13,14 @@ JEXAMXML_TMP_FILE=$2
 JEXAMXML_OPTIONS_FILE=$3
 
 # Složky referenčního výstupu a výstupu k porovnání.
-PARSE_LOG_DIR=$4
-PARSE_REF_DIR=$5
+PARSE_REF_DIR=$4
+PARSE_LOG_DIR=$5
 
-INT_LOG_DIR=$6
-INT_REF_DIR=$7
+INT_REF_DIR=$6
+INT_LOG_DIR=$7
 
-BOTH_LOG_DIR=$8
-BOTH_REF_DIR=$9
+BOTH_REF_DIR=$8
+BOTH_LOG_DIR=$9
 
 ########################################################################## PARSER
 
@@ -61,8 +61,8 @@ function parse() {
 
 echo "############################### PARSE"
 
-for TEST_NAME in read_test simple_tag write_test; do
-    parse $PARSE_LOG_DIR $PARSE_REF_DIR $TEST_NAME
+for TEST_FILE_NAME in $(find $PARSE_REF_DIR -maxdepth 1 -type f -name "*.out" -printf "%f\n"); do
+    parse $PARSE_LOG_DIR $PARSE_REF_DIR ${TEST_FILE_NAME%.out}
 done
 
 ########################################################################## INTERPRET
@@ -115,12 +115,12 @@ function both() {
 
 echo "############################### INTERPRET"
 
-for TEST_NAME in stack_test write_test; do
-    interpret $INT_LOG_DIR $INT_REF_DIR $TEST_NAME
+for TEST_FILE_NAME in $(find $INT_REF_DIR -maxdepth 1 -type f -name "*.out" -printf "%f\n"); do
+    interpret $INT_LOG_DIR $INT_REF_DIR ${TEST_FILE_NAME%.out}
 done
 
 echo "############################### BOTH"
 
-for TEST_NAME in error_string_out_of_range read_test simple_program float call_stack; do
-    both $BOTH_LOG_DIR $BOTH_REF_DIR $TEST_NAME
+for TEST_FILE_NAME in $(find $BOTH_REF_DIR -maxdepth 1 -type f -name "*.src" -printf "%f\n"); do
+    both $BOTH_LOG_DIR $BOTH_REF_DIR ${TEST_FILE_NAME%.src}
 done

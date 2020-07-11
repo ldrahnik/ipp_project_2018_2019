@@ -36,8 +36,8 @@ function parse() {
     echo -n $? > $LOG_DIR$TEST_NAME.rc
 }
 
-for TEST_NAME in read_test simple_tag write_test; do
-    parse $PARSER_TASK_TESTS_DIR $PARSER_TASK_TESTS_LOG_DIR $TEST_NAME
+for TEST_FILE_NAME in $(find $PARSER_TASK_TESTS_DIR -maxdepth 1 -type f -name "*.src" -printf "%f\n"); do
+    parse $PARSER_TASK_TESTS_DIR $PARSER_TASK_TESTS_LOG_DIR ${TEST_FILE_NAME%.src}
 done
 
 ########################################################################## INTERPRET
@@ -65,8 +65,8 @@ function interpret() {
     echo -n $? > $LOG_DIR$TEST_NAME.rc
 }
 
-for TEST_NAME in stack_test write_test; do
-    interpret $INTERPRET_TASK_TESTS_DIR $INTERPRET_TASK_TESTS_LOG_DIR $TEST_NAME
+for TEST_FILE_NAME in $(find $INTERPRET_TASK_TESTS_DIR -maxdepth 1 -type f -name "*.src" -printf "%f\n"); do
+    interpret $INTERPRET_TASK_TESTS_DIR $INTERPRET_TASK_TESTS_LOG_DIR ${TEST_FILE_NAME%.src}
 done
 
 ########################################################################## BOTH
@@ -81,10 +81,10 @@ function both() {
     # parser output is interpret input
     PIPE_FILE=$LOG_DIR$TEST_NAME.xml
 
-    parse $TESTS_DIR $LOG_DIR $TEST_NAME $PIPE_FILE
+    parse $TESTS_DIR $LOG_DIR $TEST_NAME $PIPE_FILE $PIPE_FILE
     interpret $TESTS_DIR $LOG_DIR $TEST_NAME $PIPE_FILE
 }
 
-for TEST_NAME in error_string_out_of_range read_test simple_program float call_stack; do
-    both $BOTH_TASK_TESTS_DIR $BOTH_TASK_TESTS_LOG_DIR $TEST_NAME
+for TEST_FILE_NAME in $(find $BOTH_TASK_TESTS_DIR -maxdepth 1 -type f -name "*.xml" -printf "%f\n"); do
+    both $BOTH_TASK_TESTS_DIR $BOTH_TASK_TESTS_LOG_DIR ${TEST_FILE_NAME%.xml}
 done
