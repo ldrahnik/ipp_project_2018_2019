@@ -81,10 +81,9 @@ parametr se nesmí kombinovat s parametrem --int-script)
         return $result;
       }
     }
-    $result = $this->writeHtml();
-    if($result != 0) {
-      return $result;
-    }
+
+    $this->writeHtml();
+
     return 0;
   }
 
