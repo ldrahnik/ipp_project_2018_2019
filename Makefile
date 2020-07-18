@@ -30,7 +30,7 @@ tex:
 ############################################ TESTS
 
 JEXAMXML									= $(PWD)/jexamxml.jar
-JEXAMXML_OPTIONS_FILE						= $(PWD)/tests/options
+JEXAMXML_OPTIONS_FILE						= $(PWD)/options
 JEXAMXML_TMP_FILE							= $(PWD)/tests/supplementary-tests/jexamxml_tmp
 
 

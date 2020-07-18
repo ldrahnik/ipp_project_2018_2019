@@ -22,9 +22,33 @@ INT_LOG_DIR=$7
 BOTH_REF_DIR=$8
 BOTH_LOG_DIR=$9
 
+########################################################################## TESTER
+
+function tester() {
+
+    # Argumenty funkce.
+    LOG_DIR=$1
+    TEST_NAME=$2
+
+    # Pokud je návratová hodnota "0", zkontrolujeme i výstup.
+    if [[ $(head -n 1 "$LOG_DIR$TEST_NAME.html.rc") == "0" ]]; then
+
+        # Porovnání výstupu s referenčním provedeme pomocí diff.
+        if grep --quiet --word-regexp "Celková úspěšnost složek: 1/1" "$LOG_DIR$TEST_NAME.html"; then
+            echo "*******TEST $TEST_NAME PASSED (TESTER)";
+        else
+            echo "TEST $TEST_NAME FAILED (TESTER)";
+        fi
+    else
+        echo "TEST $TEST_NAME FAILED (TESTER)";
+    fi
+}
+
 ########################################################################## PARSER
 
 function parse() {
+
+    # Argumenty funkce.
     LOG_DIR=$1
     REF_LOG_DIR=$2
     TEST_NAME=$3
@@ -62,12 +86,16 @@ function parse() {
 echo "############################### PARSE"
 
 for TEST_FILE_NAME in $(find $PARSE_REF_DIR -maxdepth 1 -type f -name "*.out" -printf "%f\n"); do
-    parse $PARSE_LOG_DIR $PARSE_REF_DIR ${TEST_FILE_NAME%.out}
+    TEST_NAME=${TEST_FILE_NAME%.out}
+    parse $PARSE_LOG_DIR $PARSE_REF_DIR $TEST_NAME
+    tester $PARSE_LOG_DIR $TEST_NAME
 done
 
 ########################################################################## INTERPRET
 
 function interpret() {
+
+    # Argumenty funkce.
     LOG_DIR=$1
     REF_LOG_DIR=$2
     TEST_NAME=$3
@@ -111,16 +139,23 @@ function both() {
     echo "############### INTERPRET"
 
     interpret $BOTH_LOG_DIR $BOTH_REF_DIR $TEST_NAME
+
+    echo "############### PARSER + INTERPRET"
+
+    tester $LOG_DIR $TEST_NAME
 }
 
 echo "############################### INTERPRET"
 
 for TEST_FILE_NAME in $(find $INT_REF_DIR -maxdepth 1 -type f -name "*.out" -printf "%f\n"); do
-    interpret $INT_LOG_DIR $INT_REF_DIR ${TEST_FILE_NAME%.out}
+    TEST_NAME=${TEST_FILE_NAME%.out}
+    interpret $INT_LOG_DIR $INT_REF_DIR $TEST_NAME
+    tester $INT_LOG_DIR $TEST_NAME
 done
 
 echo "############################### BOTH"
 
 for TEST_FILE_NAME in $(find $BOTH_REF_DIR -maxdepth 1 -type f -name "*.src" -printf "%f\n"); do
-    both $BOTH_LOG_DIR $BOTH_REF_DIR ${TEST_FILE_NAME%.src}
+    TEST_NAME=${TEST_FILE_NAME%.src}
+    both $BOTH_LOG_DIR $BOTH_REF_DIR $TEST_NAME
 done

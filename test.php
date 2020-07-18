@@ -40,8 +40,7 @@ class Test {
       --parse-only Bude testován pouze skript pro analýzu zdrojového kódu v IPPcode19 (tento
 parametr se nesmí kombinovat s parametrem --int-script)
       --int-only Bude testován pouze skript pro interpret XML reprezentace kódu v IPPcode19
-(tento parametr se nesmí kombinovat s parametrem --parse-script)
-.\n";
+(tento parametr se nesmí kombinovat s parametrem --parse-script)\n";
 
   /**
    * Konstruktor přijímající argumenty uvedené v příkazové řádce.
@@ -132,6 +131,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
       }
       $rcfile = substr_replace($file , 'rc', strrpos($file , '.') + 1);
       $outfile = substr_replace($file , 'out', strrpos($file , '.') + 1);
+      $outfileXml = substr_replace($file , 'xml', strrpos($file , '.') + 1);
       $infile = substr_replace($file , 'in', strrpos($file , '.') + 1);
       $tmpinputfile = "$infile.tmp";
       $tmpoutputfile = "$outfile.tmp";
@@ -143,6 +143,15 @@ parametr se nesmí kombinovat s parametrem --int-script)
       // chyba při otevírání vstupních souborů (např. neexistence, nedostatečné oprávnění).
       if(!is_readable($file)) {
         return 11;
+      }
+      // Pokud soubor s příponou .xml chybí (both testy)
+      if(!$this->parseOnly && !$this->intOnly) {
+        if (!is_readable($outfileXml)) {
+          // chyba při otevření výstupních souborů pro zápis (např. nedostatečné oprávnění).
+          if (!touch($outfileXml)) {
+            return 12;
+          }
+        }
       }
       // Pokud soubor s příponou in nebo out chybí, tak se automaticky dogeneruje prázdný soubor. V případě chybějícího souboru s příponou rc se vygeneruje soubor obsahující návratovou hodnotu 0.
       if(!is_readable($outfile)) {
@@ -195,7 +204,13 @@ parametr se nesmí kombinovat s parametrem --int-script)
         shell_exec("cat $file | php7.3 $this->parseScript > $tmpinputfileWithFile ; echo $? > $tmprcfile");
         shell_exec("grep -F -x -v -f $file -w $tmpinputfileWithFile > $tmpinputfile");
         shell_exec("sed -i 's/^.*<?xml/<?xml/' $tmpinputfile");
-        shell_exec("java -jar jexamxml.jar $outfile $tmpinputfile $tmpjexamxmljar options ; echo $? > $tmpdiffrcfile");
+
+        // dále pokračuje interpret, tzn. výstupní soubor z parseru bude mít v referenčním řešení koncovku .xml
+        if(!$this->parseOnly) {
+          shell_exec("java -jar $( dirname $this->parseScript)/jexamxml.jar $outfileXml $tmpinputfile $tmpjexamxmljar $( dirname $this->parseScript)/options ; echo $? > $tmpdiffrcfile");
+        } else {
+          shell_exec("java -jar $( dirname $this->parseScript)/jexamxml.jar $outfile $tmpinputfile $tmpjexamxmljar $( dirname $this->parseScript)/options ; echo $? > $tmpdiffrcfile");
+        }
         $this->results[$file]['infilediff'] = file_get_contents($tmpdiffrcfile);
         $amongrc = file_get_contents($tmprcfile);
         $amongrc = str_replace(array("\r", "\n"), '', $amongrc);
@@ -350,7 +365,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
 
       if(!$this->intOnly) {
         $infilleddiff = $info['infilediff'] == 0 ? "true" : "false";
-        $testPartialCount++;      
+        $testPartialCount++;
         if($infilleddiff == "true") $testPartialResult++;
       }
 
@@ -444,7 +459,7 @@ parametr se nesmí kombinovat s parametrem --int-script)
     $foldersCount = count($folders);
     $foldersResultHeadingColor = $successFolders == $foldersCount ? 'color: green;' : 'color: red;';
     $foldersResultHeadingStyleColor = "style=\"$foldersResultHeadingColor\"";
-    fwrite(STDOUT, "\n\n<h1 $foldersResultHeadingStyleColor>Celková úspěšnost: $successFolders/$foldersCount</h1>\n");
+    fwrite(STDOUT, "\n\n<h1 $foldersResultHeadingStyleColor>Celková úspěšnost složek: $successFolders/$foldersCount</h1>\n");
 
     fwrite(STDOUT, "</body>");
     fwrite(STDOUT, "</html>");

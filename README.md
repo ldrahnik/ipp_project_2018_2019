@@ -74,36 +74,53 @@ parametr se nesmí kombinovat s parametrem --int-script)
 make test
 # pustí projekt s dodanými testy a výstupy uloží do složky
 cd ./tests/ && bash _stud_tests.sh  /home/ldrahnik/projects/ipp_project_2018_2019 /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/log/
+Instrukce: PRINT neexistuje
+Indexace mimo daný řetězec
 # provede porovnání výstupu testů
-cd ./tests/ && bash _stud_tests_diff.sh  /home/ldrahnik/projects/ipp_project_2018_2019/jexamxml.jar /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/jexamxml_tmp /home/ldrahnik/projects/ipp_project_2018_2019/tests/options /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/log/
+cd ./tests/ && bash _stud_tests_diff.sh  /home/ldrahnik/projects/ipp_project_2018_2019/jexamxml.jar /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/jexamxml_tmp /home/ldrahnik/projects/ipp_project_2018_2019/options /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/int-only/log/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/ /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/both/log/
 ############################### PARSE
 *******TEST read_test PASSED
+*******TEST read_test PASSED (TESTER)
 *******TEST simple_tag PASSED
+*******TEST simple_tag PASSED (TESTER)
 *******TEST write_test PASSED
+*******TEST write_test PASSED (TESTER)
 ############################### INTERPRET
 *******TEST stack_test PASSED
+*******TEST stack_test PASSED (TESTER)
 *******TEST write_test PASSED
+*******TEST write_test PASSED (TESTER)
 ############################### BOTH
 ############### PARSER
-*******TEST error_string_out_of_range PASSED
+*******TEST float PASSED
 ############### INTERPRET
-*******TEST error_string_out_of_range PASSED
-############### PARSER
-*******TEST read_test PASSED
-############### INTERPRET
-*******TEST read_test PASSED
+*******TEST float PASSED
+############### PARSER + INTERPRET
+*******TEST float PASSED (TESTER)
 ############### PARSER
 *******TEST simple_program PASSED
 ############### INTERPRET
 *******TEST simple_program PASSED
+############### PARSER + INTERPRET
+*******TEST simple_program PASSED (TESTER)
 ############### PARSER
-*******TEST float PASSED
+*******TEST read_test PASSED
 ############### INTERPRET
-*******TEST float PASSED
+*******TEST read_test PASSED
+############### PARSER + INTERPRET
+*******TEST read_test PASSED (TESTER)
 ############### PARSER
 *******TEST call_stack PASSED
 ############### INTERPRET
 *******TEST call_stack PASSED
+############### PARSER + INTERPRET
+*******TEST call_stack PASSED (TESTER)
+############### PARSER
+*******TEST error_string_out_of_range PASSED
+############### INTERPRET
+*******TEST error_string_out_of_range PASSED
+############### PARSER + INTERPRET
+*******TEST error_string_out_of_range PASSED (TESTER)
 # úklid
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/jexamxml_tmp
 rm -rf /home/ldrahnik/projects/ipp_project_2018_2019/tests/supplementary-tests/parse-only/log/*
